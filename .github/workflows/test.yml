@@ -1,0 +1,32 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ["18.x", "20.x", "22.x", "24.x", "25.x"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+      - uses: actions/cache/restore@v4
+        id: node-cache-restore
+        with:
+          path: node_modules
+          key: dependencies-${{ hashFiles('package-lock.json') }}-${{ matrix.node-version }}
+      - run: npm ci
+        if: steps.node-cache-restore.outputs.cache-hit != 'true'
+      - uses: actions/cache/save@v4
+        if: always() && steps.node-cache-restore.outputs.cache-hit != 'true'
+        with:
+          path: node_modules
+          key: dependencies-${{ hashFiles('package-lock.json') }}-${{ matrix.node-version }}
+      - run: npm run lint:verify
+      - run: npm run build
+      - run: npm test

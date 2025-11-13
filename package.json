@@ -1,0 +1,51 @@
+{
+  "name": "@yasshi2525/akashic-box2d-serializer",
+  "description": "Box2D serializer/deserializer plugin for Akashic Engine",
+  "keywords": [
+    "serializer",
+    "box2dweb",
+    "akashicengine"
+  ],
+  "version": "0.1.0",
+  "author": {
+    "name": "yasshi2525",
+    "url": "https://x.com/yasshi2525"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yasshi2525/akashic-box2d-serializer.git"
+  },
+  "homepage": "https://github.com/yasshi2525/akashic-box2d-serializer",
+  "bugs": {
+    "url": "https://github.com/yasshi2525/akashic-box2d-serializer/issues"
+  },
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --fix",
+    "lint:verify": "eslint .",
+    "test": "jest",
+    "clean": "rimraf lib"
+  },
+  "dependencies": {
+    "@akashic-extension/akashic-box2d": "^3.1.1",
+    "@akashic/akashic-engine": "^3.21.0"
+  },
+  "devDependencies": {
+    "@akashic/headless-akashic": "^4.7.0",
+    "@stylistic/eslint-plugin": "^5.5.0",
+    "@types/jest": "^30.0.0",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "jest": "^30.2.0",
+    "rimraf": "^6.0.1",
+    "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

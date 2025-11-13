@@ -1,0 +1,37 @@
+name: publish
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          registry-url: "https://registry.npmjs.org"
+      - uses: actions/cache/restore@v4
+        id: node-cache-restore
+        with:
+          path: node_modules
+          key: dependencies-${{ hashFiles('package-lock.json') }}
+      - run: npm ci
+        if: steps.node-cache-restore.outputs.cache-hit != 'true'
+      - uses: actions/cache/save@v4
+        if: always() && steps.node-cache-restore.outputs.cache-hit != 'true'
+        with:
+          path: node_modules
+          key: dependencies-${{ hashFiles('package-lock.json') }}
+      - run: npm run lint:verify
+      - run: npm run build
+      - run: npm test
+      - run: npm pack
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
