@@ -5,7 +5,7 @@ import { ShapeParam, ShapeSerializer } from "./serializerShape";
 /**
  * B2Fixure オブジェクト型の識別子。
  */
-export const fixtureType = Box2DWeb.Dynamics.b2Fixture.constructor.name;
+export const fixtureType = Box2DWeb.Dynamics.b2Fixture.name;
 
 /**
  * B2Fixure オブジェクトを復元可能な形式で直列化したJSONです。

@@ -5,7 +5,7 @@ import { FixtureParam, FixtureSerializer } from "./serializerFixture";
 /**
  * B2Body オブジェクト型の識別子
  */
-export const bodyType = Box2DWeb.Dynamics.b2Body.constructor.name;
+export const bodyType = Box2DWeb.Dynamics.b2Body.name;
 
 /**
  * B2Body オブジェクトを復元可能な形式で直列化したJSONです。

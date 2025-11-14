@@ -3,7 +3,7 @@ import { ObjectDef, ObjectSerializer } from "./serializerObject";
 /**
  * g.E オブジェクト型の識別子
  */
-export const entityType = g.E.constructor.name;
+export const entityType = g.E.name;
 
 /**
  * 直列化したときの parent の値の型

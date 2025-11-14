@@ -4,7 +4,7 @@ import { ObjectDef, ObjectSerializer } from "./serializerObject";
 /**
  * Circle Shapeオブジェクト型の識別子。
  */
-export const circleShapeType = Box2DWeb.Collision.Shapes.b2CircleShape.constructor.name;
+export const circleShapeType = Box2DWeb.Collision.Shapes.b2CircleShape.name;
 
 /**
  * Circle Shapeオブジェクトを復元可能な形式で直列化したJSONです。

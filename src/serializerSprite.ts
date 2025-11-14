@@ -5,7 +5,7 @@ import { ObjectDef, ObjectSerializer } from "./serializerObject";
 /**
  * g.Sprite オブジェクト型の識別子
  */
-export const spriteType = g.Sprite.constructor.name;
+export const spriteType = g.Sprite.name;
 
 /**
  * g.Sprite オブジェクトを復元可能な形式で直列化したJSONです。

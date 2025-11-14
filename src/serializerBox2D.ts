@@ -169,7 +169,7 @@ export class Box2DSerializer {
         derivedSerializer: (object: O) => J,
         derivedDeserializer?: (json: J & g.EParameterObject) => O
     ): void {
-        const derivedEntityType = classType.constructor.name;
+        const derivedEntityType = classType.name;
         const derivedEntitySerializer = new class extends EntitySerializer implements ObjectSerializer<O, J & EntityParam> {
             override filter(objectType: string): boolean {
                 return objectType === derivedEntityType;
@@ -217,7 +217,7 @@ export class Box2DSerializer {
         derivedSerializer: (object: O) => J,
         derivedDeserializer?: (json: J & g.FilledRectParameterObject) => O
     ): void {
-        const derivedFilledRectType = classType.constructor.name;
+        const derivedFilledRectType = classType.name;
         const derivedFilledRectSerializer = new class extends FilledRectSerializer implements ObjectSerializer<O, J & FilledRectParam> {
             override filter(objectType: string): boolean {
                 return objectType === derivedFilledRectType;
@@ -273,7 +273,7 @@ export class Box2DSerializer {
         surfaceDeserializer?: SpriteSurfaceDeserializer,
         derivedDeserializer?: (json: J & g.SpriteParameterObject) => O
     ): void {
-        const derivedSpriteType = classType.constructor.name;
+        const derivedSpriteType = classType.name;
         const derivedSpriteSerializer = new class extends SpriteSerializer implements ObjectSerializer<O, J & SpriteParam> {
             override filter(objectType: string): boolean {
                 return objectType === derivedSpriteType;
@@ -325,7 +325,7 @@ export class Box2DSerializer {
         surfaceDeserializer?: FrameSpriteSurfaceDeserializer,
         derivedDeserializer?: (json: J & g.FrameSpriteParameterObject) => O
     ): void {
-        const derivedFrameSpriteType = classType.constructor.name;
+        const derivedFrameSpriteType = classType.name;
         const derivedSpriteSerializer = new class extends FrameSpriteSerializer implements ObjectSerializer<O, J & FrameSpriteParam> {
             override filter(objectType: string): boolean {
                 return objectType === derivedFrameSpriteType;
@@ -377,7 +377,7 @@ export class Box2DSerializer {
         fontDeserializer: LabelFontDeserializer,
         derivedDeserializer?: (json: J & g.LabelParameterObject) => O
     ): void {
-        const derivedLabelType = classType.constructor.name;
+        const derivedLabelType = classType.name;
         const derivedLabelSerializer = new class extends LabelSerializer implements ObjectSerializer<O, J & LabelParam> {
             override filter(objectType: string): boolean {
                 return objectType === derivedLabelType;
@@ -428,7 +428,7 @@ export class Box2DSerializer {
         surfaceDeserializer: PaneSurfaceDeserializer,
         derivedDeserializer?: (json: J & g.PaneParameterObject) => O
     ): void {
-        const derivedPaneType = classType.constructor.name;
+        const derivedPaneType = classType.name;
         const derivedPaneSerializer = new class extends PaneSerializer implements ObjectSerializer<O, J & PaneParam> {
             override filter(objectType: string): boolean {
                 return objectType === derivedPaneType;

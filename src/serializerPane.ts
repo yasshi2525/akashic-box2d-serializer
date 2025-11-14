@@ -5,7 +5,7 @@ import { ObjectDef, ObjectSerializer } from "./serializerObject";
 /**
  * g.Pane オブジェクト型の識別子
  */
-export const paneType = g.Pane.constructor.name;
+export const paneType = g.Pane.name;
 
 /**
  * g.Pane オブジェクトを復元可能な形式で直列化したJSONです。

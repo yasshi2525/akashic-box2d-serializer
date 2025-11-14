@@ -4,7 +4,7 @@ import { ObjectDef, ObjectSerializer } from "./serializerObject";
 /**
  * Polygon Shapeオブジェクト型の識別子。
  */
-export const polygonShapeType = Box2DWeb.Collision.Shapes.b2PolygonShape.constructor.name;
+export const polygonShapeType = Box2DWeb.Collision.Shapes.b2PolygonShape.name;
 
 /**
  * Polygon Shapeオブジェクトを復元可能な形式で直列化したJSONです。
