@@ -13,6 +13,7 @@ import { SpriteParam, SpriteSerializer, SpriteSurfaceDeserializer } from "./seri
 import { FrameSpriteParam, FrameSpriteSerializer, FrameSpriteSurfaceDeserializer } from "./serializerFrameSprite";
 import { LabelFontDeserializer, LabelParam, LabelSerializer } from "./serializerLabel";
 import { PaneParam, PaneSerializer, PaneSurfaceDeserializer } from "./serializerPane";
+import { FilterDataSerializer } from "./serializerFilterData";
 
 /**
  * Box2D オブジェクトを復元可能な形式で直列化したJSONです。
@@ -56,6 +57,7 @@ export class Box2DSerializer {
     readonly _circleShapeSerializer: CircleShapeSerializer;
     readonly _polygonShapeSerializer: PolygonShapeSerializer;
     readonly _shapeSerializer: ShapeSerializer;
+    readonly _filterDataSerializer: FilterDataSerializer;
     readonly _fixtureSerializer: FixtureSerializer;
     readonly _bodySerializer: BodySerializer;
     readonly _entitySerializer: EntitySerializer;
@@ -77,7 +79,9 @@ export class Box2DSerializer {
             circleShapeSerializer: this._circleShapeSerializer,
             polygonShapeSerializer: this._polygonShapeSerializer,
         });
+        this._filterDataSerializer = new FilterDataSerializer();
         this._fixtureSerializer = new FixtureSerializer({
+            filterDataSerializer: this._filterDataSerializer,
             shapeSerializer: this._shapeSerializer,
         });
         this._bodySerializer = new BodySerializer({

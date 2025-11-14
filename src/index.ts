@@ -3,6 +3,7 @@ export * from "./serializerBox2D";
 export * from "./serializerEbody";
 export * from "./serializerEntity";
 export * from "./serializerFilledRect";
+export * from "./serializerFilterData";
 export * from "./serializerFixture";
 export * from "./serializerFrameSprite";
 export * from "./serializerImageAsset";

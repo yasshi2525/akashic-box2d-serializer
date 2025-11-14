@@ -1,6 +1,7 @@
-import { Box2DWeb } from "@akashic-extension/akashic-box2d";
+import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
 import { ShapeParam, ShapeSerializer } from "./serializerShape";
+import { FilterDataParam, FilterDataSerializer } from "./serializerFilterData";
 
 /**
  * B2Fixure オブジェクト型の識別子。
@@ -13,11 +14,7 @@ export const fixtureType = Box2DWeb.Dynamics.b2Fixture.name;
  */
 export interface FixtureParam {
     density: number;
-    filter: {
-        categoryBits: number;
-        groupIndex: number;
-        maskBits: number;
-    };
+    filter: ObjectDef<FilterDataParam>;
     friction: number;
     isSensor: boolean;
     restitution: number;
@@ -26,6 +23,7 @@ export interface FixtureParam {
 }
 
 export interface FixtureSerializerObjectParam {
+    filterDataSerializer: FilterDataSerializer;
     shapeSerializer: ShapeSerializer;
 }
 
@@ -34,14 +32,16 @@ export interface FixtureSerializerObjectParam {
  * 非対称な理由は、B2Body を作成するために {@link Box2D#createBody()} に B2FixtureDef を入力する必要があるためです。
  */
 export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Fixture, FixtureParam[], Box2DWeb.Dynamics.b2FixtureDef[]> {
+    readonly filterDataSerializer: FilterDataSerializer;
     readonly shapeSerializer: ShapeSerializer;
 
     constructor(param: FixtureSerializerObjectParam) {
+        this.filterDataSerializer = param.filterDataSerializer;
         this.shapeSerializer = param.shapeSerializer;
     }
 
     filter(objectType: string): boolean {
-        return this.shapeSerializer.filter(objectType);
+        return objectType === fixtureType;
     }
 
     /**
@@ -52,17 +52,13 @@ export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2F
         const fixtureList: FixtureParam[] = [];
         for (let fixture = object; fixture; fixture = fixture.GetNext()) {
             fixtureList.push({
-                density: object.GetDensity(),
-                filter: {
-                    categoryBits: object.GetFilterData().categoryBits,
-                    groupIndex: object.GetFilterData().groupIndex,
-                    maskBits: object.GetFilterData().maskBits,
-                },
-                friction: object.GetFriction(),
-                isSensor: object.IsSensor(),
-                restitution: object.GetRestitution(),
-                shape: this.shapeSerializer.serialize(object.GetShape()),
-                userData: object.GetUserData(),
+                density: fixture.GetDensity(),
+                filter: this.filterDataSerializer.serialize(fixture.GetFilterData()),
+                friction: fixture.GetFriction(),
+                isSensor: fixture.IsSensor(),
+                restitution: fixture.GetRestitution(),
+                shape: this.shapeSerializer.serialize(fixture.GetShape()),
+                userData: fixture.GetUserData(),
             });
         }
         return {
@@ -75,10 +71,7 @@ export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2F
         return json.param.map((param) => {
             const fixture = new Box2DWeb.Dynamics.b2FixtureDef();
             fixture.density = param.density;
-            fixture.filter = new Box2DWeb.Dynamics.b2FilterData();
-            fixture.filter.categoryBits = param.filter.categoryBits;
-            fixture.filter.groupIndex = param.filter.groupIndex;
-            fixture.filter.maskBits = param.filter.maskBits;
+            fixture.filter = this.filterDataSerializer.deserialize(param.filter);
             fixture.friction = param.friction;
             fixture.isSensor = param.isSensor;
             fixture.restitution = param.restitution;
