@@ -5,7 +5,7 @@ import { PolygonShapeParam, PolygonShapeSerializer, polygonShapeType } from "./s
 
 export type ShapeParam = CircleShapeParam | PolygonShapeParam;
 
-export interface ShapeSerializerObjectParam {
+export interface ShapeSerializerParameterObject {
     circleShapeSerializer: CircleShapeSerializer;
     polygonShapeSerializer: PolygonShapeSerializer;
 }
@@ -17,7 +17,7 @@ export class ShapeSerializer implements ObjectSerializer<Box2DWeb.Collision.Shap
     readonly _circleSerializer: CircleShapeSerializer;
     readonly _polygonSerializer: PolygonShapeSerializer;
 
-    constructor(param: ShapeSerializerObjectParam) {
+    constructor(param: ShapeSerializerParameterObject) {
         this._circleSerializer = param.circleShapeSerializer;
         this._polygonSerializer = param.polygonShapeSerializer;
     }

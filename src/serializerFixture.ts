@@ -22,7 +22,7 @@ export interface FixtureParam {
     userData: any;
 }
 
-export interface FixtureSerializerObjectParam {
+export interface FixtureSerializerParameterObject {
     filterDataSerializer: FilterDataSerializer;
     shapeSerializer: ShapeSerializer;
 }
@@ -35,7 +35,7 @@ export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2F
     readonly filterDataSerializer: FilterDataSerializer;
     readonly shapeSerializer: ShapeSerializer;
 
-    constructor(param: FixtureSerializerObjectParam) {
+    constructor(param: FixtureSerializerParameterObject) {
         this.filterDataSerializer = param.filterDataSerializer;
         this.shapeSerializer = param.shapeSerializer;
     }
