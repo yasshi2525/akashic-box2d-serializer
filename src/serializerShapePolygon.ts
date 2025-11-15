@@ -1,5 +1,6 @@
 import { Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
+import { Vec2Param, Vec2Serializer } from "./serializerVec2";
 
 /**
  * Polygon Shapeオブジェクト型の識別子。
@@ -13,13 +14,23 @@ export interface PolygonShapeParam {
     /**
      * 各頂点の座標リスト。座標系は box2d (m) であり、Akashicのエンティティ系 (px) ではない。
      */
-    vertices: { x: number; y: number }[];
+    vertices: ObjectDef<Vec2Param>[];
+}
+
+export interface PolygonShapeParameterObject {
+    vec2Serializer: Vec2Serializer;
 }
 
 /**
  * Polygon Shape定義を直列化・復元可能にします
  */
 export class PolygonShapeSerializer implements ObjectSerializer<Box2DWeb.Collision.Shapes.b2PolygonShape, PolygonShapeParam> {
+    readonly _vec2Serailizer: Vec2Serializer;
+
+    constructor(param: PolygonShapeParameterObject) {
+        this._vec2Serailizer = param.vec2Serializer;
+    }
+
     filter(objectType: string): boolean {
         return objectType === polygonShapeType;
     }
@@ -28,7 +39,7 @@ export class PolygonShapeSerializer implements ObjectSerializer<Box2DWeb.Collisi
         return {
             type: polygonShapeType,
             param: {
-                vertices: object.GetVertices().map(v => ({ x: v.x, y: v.y })),
+                vertices: object.GetVertices().map(v => this._vec2Serailizer.serialize(v)),
             },
         };
     }
@@ -36,7 +47,7 @@ export class PolygonShapeSerializer implements ObjectSerializer<Box2DWeb.Collisi
     deserialize(json: ObjectDef<PolygonShapeParam>): Box2DWeb.Collision.Shapes.b2PolygonShape {
         const shape = new Box2DWeb.Collision.Shapes.b2PolygonShape();
         shape.SetAsArray(
-            json.param.vertices.map(p => new Box2DWeb.Common.Math.b2Vec2(p.x, p.y)),
+            json.param.vertices.map(p => this._vec2Serailizer.deserialize(p)),
             json.param.vertices.length
         );
         return shape;

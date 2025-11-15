@@ -1,6 +1,7 @@
 import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
 import { FixtureParam, FixtureSerializer } from "./serializerFixture";
+import { Vec2Param, Vec2Serializer } from "./serializerVec2";
 
 /**
  * B2Body オブジェクト型の識別子
@@ -23,13 +24,14 @@ export interface BodyParam {
     fixtureList: ObjectDef<FixtureParam[]>;
     inertiaScale: number;
     linearDamping: number;
-    linearVelocity: { x: number; y: number };
+    linearVelocity: ObjectDef<Vec2Param>;
     type: number;
     userData: any;
 }
 
 export interface BodySerializerParameterObject {
     fixtureSerializer: FixtureSerializer;
+    vec2Serializer: Vec2Serializer;
 }
 
 /**
@@ -38,9 +40,11 @@ export interface BodySerializerParameterObject {
  */
 export class BodySerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Body, BodyParam, Box2DWeb.Dynamics.b2BodyDef> {
     readonly _fixtureSerializer: FixtureSerializer;
+    readonly _vec2Serializer: Vec2Serializer;
 
     constructor(param: BodySerializerParameterObject) {
         this._fixtureSerializer = param.fixtureSerializer;
+        this._vec2Serializer = param.vec2Serializer;
     }
 
     filter(objectType: string): boolean {
@@ -66,10 +70,7 @@ export class BodySerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Body
                 fixtureList: this._fixtureSerializer.serialize(object.GetFixtureList()),
                 inertiaScale: object.GetDefinition().inertiaScale,
                 linearDamping: object.GetLinearDamping(),
-                linearVelocity: {
-                    x: object.GetLinearVelocity().x,
-                    y: object.GetLinearVelocity().y,
-                },
+                linearVelocity: this._vec2Serializer.serialize(object.GetLinearVelocity()),
                 type: object.GetType(),
                 userData: object.GetUserData(),
             },
@@ -91,10 +92,7 @@ export class BodySerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Body
         body.fixedRotation = json.param.fixedRotation;
         body.inertiaScale = json.param.inertiaScale;
         body.linearDamping = json.param.linearDamping;
-        body.linearVelocity = new Box2DWeb.Common.Math.b2Vec2(
-            json.param.linearVelocity.x,
-            json.param.linearVelocity.y
-        );
+        body.linearVelocity = this._vec2Serializer.deserialize(json.param.linearVelocity);
         body.type = json.param.type;
         body.userData = json.param.userData;
         return body;

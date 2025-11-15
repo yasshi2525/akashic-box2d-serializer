@@ -14,6 +14,7 @@ import { FrameSpriteParam, FrameSpriteSerializer, FrameSpriteSurfaceDeserializer
 import { LabelFontDeserializer, LabelParam, LabelSerializer } from "./serializerLabel";
 import { PaneParam, PaneSerializer, PaneSurfaceDeserializer } from "./serializerPane";
 import { FilterDataSerializer } from "./serializerFilterData";
+import { Vec2Serializer } from "./serializerVec2";
 
 /**
  * Box2D オブジェクトを復元可能な形式で直列化したJSONです。
@@ -55,6 +56,7 @@ export class Box2DSerializer {
     readonly _scene: g.Scene;
     readonly _box2d: Box2D;
     readonly _circleShapeSerializer: CircleShapeSerializer;
+    readonly _vec2serializer: Vec2Serializer;
     readonly _polygonShapeSerializer: PolygonShapeSerializer;
     readonly _shapeSerializer: ShapeSerializer;
     readonly _filterDataSerializer: FilterDataSerializer;
@@ -74,7 +76,10 @@ export class Box2DSerializer {
         this._scene = param.scene;
         this._box2d = param.box2d;
         this._circleShapeSerializer = new CircleShapeSerializer();
-        this._polygonShapeSerializer = new PolygonShapeSerializer();
+        this._vec2serializer = new Vec2Serializer();
+        this._polygonShapeSerializer = new PolygonShapeSerializer({
+            vec2Serializer: this._vec2serializer,
+        });
         this._shapeSerializer = new ShapeSerializer({
             circleShapeSerializer: this._circleShapeSerializer,
             polygonShapeSerializer: this._polygonShapeSerializer,
@@ -86,6 +91,7 @@ export class Box2DSerializer {
         });
         this._bodySerializer = new BodySerializer({
             fixtureSerializer: this._fixtureSerializer,
+            vec2Serializer: this._vec2serializer,
         });
         this._entitySerializer = new EntitySerializer({
             scene: this._scene,

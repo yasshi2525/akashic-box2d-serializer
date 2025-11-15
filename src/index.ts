@@ -14,3 +14,4 @@ export * from "./serializerShape";
 export * from "./serializerShapeCircle";
 export * from "./serializerShapePolygon";
 export * from "./serializerSprite";
+export * from "./serializerVec2";
