@@ -14,7 +14,6 @@ export type EntityParentParam = number | "scene" | undefined;
  * g.E オブジェクトを復元可能な形式で直列化したJSONです。
  * scene は復元時の現在のシーンとするため、直列化しません。
  * parent は親エンティティのidとして直列化します。
- * children は子エンティティの parent から復元するため、直列化しません。
  * shaderProgram はデータ量が多いため直列化しません。
  * tag は直列化可能でなければなりません。
  */
@@ -25,6 +24,7 @@ export interface EntityParam extends Omit<Required<g.EParameterObject>, "scene" 
      * 親エンティティのID。シーン直下の場合は "scene"、未所属の場合 `undefined`
      */
     parent: EntityParentParam;
+    children?: ObjectDef<EntityParam>[];
 }
 
 export interface EntitySerializerParameterObject {
@@ -32,6 +32,10 @@ export interface EntitySerializerParameterObject {
      * 復元時に設定する g.Scene
      */
     scene: g.Scene;
+    /**
+     * 子エンティティを直列化・復元するためのシリアライザセット
+     */
+    entitySerializerSet: Set<EntitySerializer>;
 }
 
 /**
@@ -39,9 +43,11 @@ export interface EntitySerializerParameterObject {
  */
 export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
     readonly _scene: g.Scene;
+    readonly _entitySerializerSet: Set<EntitySerializer>;
 
     constructor(param: EntitySerializerParameterObject) {
         this._scene = param.scene;
+        this._entitySerializerSet = param.entitySerializerSet;
     }
 
     filter(objectType: string): boolean {
@@ -51,7 +57,6 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
     /**
      * scene は復元時の現在のシーンとするため、直列化しません。
      * parent は親エンティティのidとして直列化します。
-     * children は子エンティティの parent から復元するため、直列化しません。
      * shaderProgram はデータ量が多いため直列化しません。
      * tag は直列化可能でなければなりません。
      * @inheritdoc
@@ -73,6 +78,7 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
                 local: object.local,
                 opacity: object.opacity,
                 parent: this._serializeParent(object),
+                children: this._serializeChildren(object.children),
                 scaleX: object.scaleX,
                 scaleY: object.scaleY,
                 tag: object.tag,
@@ -87,12 +93,12 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
     /**
      * scene はコンストラクタで指定したシーンに設定されます。
      * parent は id から解決します。
-     * children は該当するエンティティの復元時に解決されます。
      * shaderProgram は復元されません。
      * @inheritdoc
      */
     deserialize(json: ObjectDef<EntityParam>): g.E {
         const entity = new g.E(this._deserializeParameterObject(json.param));
+        entity.children = this._deserializeChildren(json.param.children);
         return entity;
     }
 
@@ -105,6 +111,16 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
         }
     }
 
+    _serializeChildren(children: g.E["children"]): undefined | ObjectDef<EntityParam>[] {
+        if (children) {
+            return children.map(c => this._findEntitySerializer(c.constructor.name).serialize(c));
+        }
+        return undefined;
+    }
+
+    /**
+     * children は子エンティティのデシリアライズ時に解決されます。
+     */
     _deserializeParameterObject(param: EntityParam) {
         return {
             scene: this._scene,
@@ -140,6 +156,13 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
         }
     }
 
+    _deserializeChildren(children: EntityParam["children"]): g.E["children"] {
+        if (children) {
+            return children.map(c => this._findEntitySerializer(c.type).deserialize(c));
+        }
+        return undefined;
+    }
+
     _findEntityByIdFromScene(scene: g.Scene, targetID: number): g.E {
         for (const child of scene.children) {
             const found = this._findEntityById(child, targetID);
@@ -161,5 +184,14 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
             }
         }
         return undefined;
+    }
+
+    _findEntitySerializer(objectType: string): EntitySerializer {
+        for (const entitySerializer of this._entitySerializerSet.values()) {
+            if (entitySerializer.filter(objectType)) {
+                return entitySerializer;
+            }
+        }
+        throw new Error(`Matched entity serializer was not found. (object type = ${objectType})`);
     }
 }
