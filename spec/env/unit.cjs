@@ -1,5 +1,7 @@
 const { GameContext } = require("@akashic/headless-akashic");
 
+global.g = require("@akashic/akashic-engine");
+
 /** @type {import("@akashic/headless-akashic").GameContext} */
 let context;
 
