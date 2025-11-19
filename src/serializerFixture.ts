@@ -2,6 +2,7 @@ import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
 import { ShapeParam, ShapeSerializer } from "./serializerShape";
 import { FilterDataParam, FilterDataSerializer } from "./serializerFilterData";
+import { DynamicTreeNodeParam, DynamicTreeNodeSerializer } from "./serializerTreeNodeDynamic";
 
 /**
  * B2Fixure オブジェクト型の識別子。
@@ -20,11 +21,13 @@ export interface FixtureParam {
     restitution: number;
     shape: ObjectDef<ShapeParam>;
     userData: any;
+    m_proxy?: ObjectDef<DynamicTreeNodeParam>;
 }
 
 export interface FixtureSerializerParameterObject {
     filterDataSerializer: FilterDataSerializer;
     shapeSerializer: ShapeSerializer;
+    dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
 }
 
 /**
@@ -34,10 +37,12 @@ export interface FixtureSerializerParameterObject {
 export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Fixture, FixtureParam[], Box2DWeb.Dynamics.b2FixtureDef[]> {
     readonly filterDataSerializer: FilterDataSerializer;
     readonly shapeSerializer: ShapeSerializer;
+    readonly dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
 
     constructor(param: FixtureSerializerParameterObject) {
         this.filterDataSerializer = param.filterDataSerializer;
         this.shapeSerializer = param.shapeSerializer;
+        this.dynamicTreeNodeSerializer = param.dynamicTreeNodeSerializer;
     }
 
     filter(objectType: string): boolean {
@@ -59,6 +64,7 @@ export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2F
                 restitution: fixture.GetRestitution(),
                 shape: this.shapeSerializer.serialize(fixture.GetShape()),
                 userData: fixture.GetUserData(),
+                m_proxy: fixture.m_proxy ? this.dynamicTreeNodeSerializer.serialize(fixture.m_proxy) : undefined,
             });
         }
         return {

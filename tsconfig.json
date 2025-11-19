@@ -17,6 +17,7 @@
     "./node_modules/@akashic-extension/akashic-box2d/typings/box2dweb.d.ts"
   ],
   "include": [
-    "./src/**/*.ts"
+    "./src/**/*.ts",
+    "./typings/**/*.d.ts"
   ]
 }

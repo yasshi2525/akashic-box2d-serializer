@@ -1,3 +1,4 @@
+import { PlainMatrixParam, PlainMatrixSerializer } from "./serializerMatrixPlain";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
 
 /**
@@ -25,6 +26,8 @@ export interface EntityParam extends Omit<Required<g.EParameterObject>, "scene" 
      */
     parent: EntityParentParam;
     children?: ObjectDef<EntityParam>[];
+    _matrix?: ObjectDef<PlainMatrixParam>;
+    state: g.EntityStateFlags;
 }
 
 export interface EntitySerializerParameterObject {
@@ -36,6 +39,7 @@ export interface EntitySerializerParameterObject {
      * 子エンティティを直列化・復元するためのシリアライザセット
      */
     entitySerializerSet: Set<EntitySerializer>;
+    plainMatrixSerializer: PlainMatrixSerializer;
 }
 
 /**
@@ -44,10 +48,12 @@ export interface EntitySerializerParameterObject {
 export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
     readonly _scene: g.Scene;
     readonly _entitySerializerSet: Set<EntitySerializer>;
+    readonly _plainMatrixSerializer: PlainMatrixSerializer;
 
     constructor(param: EntitySerializerParameterObject) {
         this._scene = param.scene;
         this._entitySerializerSet = param.entitySerializerSet;
+        this._plainMatrixSerializer = param.plainMatrixSerializer;
     }
 
     filter(objectType: string): boolean {
@@ -86,6 +92,8 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
                 width: object.width,
                 x: object.x,
                 y: object.y,
+                _matrix: object._matrix ? this._plainMatrixSerializer.serialize(object._matrix) : undefined,
+                state: object.state,
             },
         };
     }
@@ -98,6 +106,10 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
      */
     deserialize(json: ObjectDef<EntityParam>): g.E {
         const entity = new g.E(this._deserializeParameterObject(json.param));
+        if (json.param._matrix) {
+            entity._matrix = this._plainMatrixSerializer.deserialize(json.param._matrix);
+        }
+        entity.state = json.param.state;
         entity.children = this._deserializeChildren(json.param.children);
         return entity;
     }
