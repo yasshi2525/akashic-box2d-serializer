@@ -33,7 +33,7 @@
     "clean": "rimraf lib"
   },
   "dependencies": {
-    "@akashic-extension/akashic-box2d": "^3.1.1",
+    "@akashic-extension/akashic-box2d": "^3.1.2",
     "@akashic/akashic-engine": "^3.21.0"
   },
   "devDependencies": {
