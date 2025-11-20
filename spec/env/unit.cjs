@@ -13,17 +13,24 @@ const setup = async () => {
     const scene = new client.g.Scene({ game: client.game, name: "__test__" });
     client.game.pushScene(scene);
     await client.advanceUntil(() => client.game.scene() === scene);
-    return { ctx, g: client.g, scene };
+    const step = async () => ctx.step();
+    return { ctx, client, g: client.g, scene, step };
 };
 
 beforeEach(async () => {
-    const { ctx, g, scene } = await setup();
+    const { ctx, client, g, scene, step } = await setup();
     context = ctx;
     global.g = g;
     global.scene = scene;
-    const { ctx: targetCtx, scene: targetScene } = await setup();
+    global.client = client;
+    const { ctx: targetCtx, client: targetClient, scene: targetScene, step: targetStep } = await setup();
     targetContext = targetCtx;
     global.targetScene = targetScene;
+    global.targetClient = targetClient;
+    global.step = async () => {
+        await step();
+        await targetStep();
+    };
 });
 
 afterEach(async () => {
