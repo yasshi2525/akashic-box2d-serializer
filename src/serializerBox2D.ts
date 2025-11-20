@@ -245,9 +245,9 @@ export class Box2DSerializer {
                 const derivedParamObj = Object.keys(json.param)
                     .filter(key => !(key in baseParamObj))
                     .reduce((obj, key: keyof (J & g.EParameterObject)) => {
-                    obj[key] = json.param[key];
-                    return obj;
-                }, baseParamObj as J & g.EParameterObject);
+                        obj[key] = json.param[key];
+                        return obj;
+                    }, baseParamObj as J & g.EParameterObject);
                 if (derivedDeserializer) {
                     return derivedDeserializer(derivedParamObj);
                 }
@@ -298,14 +298,14 @@ export class Box2DSerializer {
                     .filter(key => !(key in baseParamObj))
                     .reduce((obj, key: keyof (J & g.FilledRectParameterObject)) => {
                     // 謎: これをいれないとエラーになる。 J[cssColor] を参照しようとするらしい。
-                    if (key === "cssColor") {
-                        obj.cssColor = json.param.cssColor;
-                    }
-                    else {
-                        obj[key] = json.param[key];
-                    }
-                    return obj;
-                }, baseParamObj as J & g.FilledRectParameterObject);
+                        if (key === "cssColor") {
+                            obj.cssColor = json.param.cssColor;
+                        }
+                        else {
+                            obj[key] = json.param[key];
+                        }
+                        return obj;
+                    }, baseParamObj as J & g.FilledRectParameterObject);
                 if (derivedDeserializer) {
                     return derivedDeserializer(derivedParamObj);
                 }
@@ -357,9 +357,9 @@ export class Box2DSerializer {
                 const derivedParamObj = Object.keys(json.param)
                     .filter(key => !(key in baseParamObj))
                     .reduce((obj, key: keyof (J & g.SpriteParameterObject)) => {
-                    obj[key] = json.param[key];
-                    return obj;
-                }, baseParamObj as J & g.SpriteParameterObject);
+                        obj[key] = json.param[key];
+                        return obj;
+                    }, baseParamObj as J & g.SpriteParameterObject);
                 if (derivedDeserializer) {
                     return derivedDeserializer(derivedParamObj);
                 }
@@ -413,9 +413,9 @@ export class Box2DSerializer {
                 const derivedParamObj = Object.keys(json.param)
                     .filter(key => !(key in baseParamObj))
                     .reduce((obj, key: keyof (J & g.FrameSpriteParameterObject)) => {
-                    obj[key] = json.param[key];
-                    return obj;
-                }, baseParamObj as J & g.FrameSpriteParameterObject);
+                        obj[key] = json.param[key];
+                        return obj;
+                    }, baseParamObj as J & g.FrameSpriteParameterObject);
                 if (derivedDeserializer) {
                     return derivedDeserializer(derivedParamObj);
                 }
@@ -469,9 +469,9 @@ export class Box2DSerializer {
                 const derivedParamObj = Object.keys(json.param)
                     .filter(key => !(key in baseParamObj))
                     .reduce((obj, key: keyof (J & g.LabelParameterObject)) => {
-                    obj[key] = json.param[key];
-                    return obj;
-                }, baseParamObj as J & g.LabelParameterObject);
+                        obj[key] = json.param[key];
+                        return obj;
+                    }, baseParamObj as J & g.LabelParameterObject);
                 if (derivedDeserializer) {
                     return derivedDeserializer(derivedParamObj);
                 }
@@ -500,7 +500,7 @@ export class Box2DSerializer {
     addDerivedPaneSerializer<O extends g.Pane, J extends Record<string, unknown | Boolean>>(
         classType: new (...args: any) => O,
         derivedSerializer: (object: O) => J,
-        surfaceDeserializer: PaneSurfaceDeserializer,
+        surfaceDeserializer?: PaneSurfaceDeserializer,
         derivedDeserializer?: (json: J & g.PaneParameterObject) => O
     ): void {
         const derivedPaneType = classType.name;
@@ -524,9 +524,9 @@ export class Box2DSerializer {
                 const derivedParamObj = Object.keys(json.param)
                     .filter(key => !(key in baseParamObj))
                     .reduce((obj, key: keyof (J & g.PaneParameterObject)) => {
-                    obj[key] = json.param[key];
-                    return obj;
-                }, baseParamObj as J & g.PaneParameterObject);
+                        obj[key] = json.param[key];
+                        return obj;
+                    }, baseParamObj as J & g.PaneParameterObject);
                 if (derivedDeserializer) {
                     return derivedDeserializer(derivedParamObj);
                 }
