@@ -126,12 +126,13 @@ describe("EBodySerializer", () => {
         });
     });
 
-    it("can serialize interacted ebody", () => {
+    it("can serialize interacted ebody", async () => {
         const initialJson = serializer.serialize(ebody);
         expect(initialJson.param.entity.param.x).toBe(0);
         expect(initialJson.param.b2body.def.param.linearVelocity.param.x).toBe(0);
         ebody.b2Body.ApplyForce(box2d.vec2(3, 4), box2d.vec2(0.1, 0.2));
         box2d.step(10);
+        await step();
         const json = serializer.serialize(ebody);
         expect(json.param.entity.param.x).not.toBe(0);
         expect(json.param.b2body.def.param.linearVelocity.param.x).not.toBe(0);
@@ -152,6 +153,7 @@ describe("EBodySerializer", () => {
     it("can deserialize interacted ebody", async () => {
         ebody.b2Body.ApplyForce(box2d.vec2(3, 4), box2d.vec2(0.1, 0.2));
         box2d.step(10);
+        await step();
         const json = serializer.serialize(ebody);
         const object = serializer.deserialize(json);
         expect(object).toEqual({
