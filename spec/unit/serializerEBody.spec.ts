@@ -141,12 +141,10 @@ describe("EBodySerializer", () => {
     it("can deserialize ebody", () => {
         const json = serializer.serialize(ebody);
         const object = serializer.deserialize(json);
-        ebody.entity.scene = targetScene;
-        ebody.entity.parent = targetScene;
         expect(object).toEqual({
             id: ebody.id,
-            b2Body: toExpectedBody(object.b2Body, ebody.b2Body),
-            entity: toExpectedEntity(object.entity, ebody.entity),
+            b2Body: toExpectedBody(ebody.b2Body, object.b2Body),
+            entity: toExpectedEntity(ebody.entity, object.entity),
         });
     });
 
@@ -158,8 +156,8 @@ describe("EBodySerializer", () => {
         const object = serializer.deserialize(json);
         expect(object).toEqual({
             id: ebody.id,
-            b2Body: toExpectedBody(object.b2Body, ebody.b2Body),
-            entity: toExpectedEntity(object.entity, ebody.entity),
+            b2Body: toExpectedBody(ebody.b2Body, object.b2Body),
+            entity: toExpectedEntity(ebody.entity, object.entity),
         });
     });
 });
