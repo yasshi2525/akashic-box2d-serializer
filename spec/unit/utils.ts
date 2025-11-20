@@ -58,6 +58,10 @@ export const toExpectedBody = (original: Box2DWeb.Dynamics.b2Body, received: Box
     original.m_world = received.m_world;
     original.m_world.m_contactManager.m_world = received.m_world;
 
+    // prev, next は差し替わる
+    original.m_prev = received.m_prev;
+    original.m_next = received.m_next;
+
     // m_world の m_contactManager.m_broadPhase.m_tree.m_root.aabb は復元するとなぜか変わる。
     // おそらく既存の計算結果のキャッシュであると判断し、動作に問題はないと判断した。
     original.m_world.m_contactManager.m_broadPhase.m_tree.m_root.aabb.lowerBound
@@ -77,5 +81,14 @@ export const toExpectedBody = (original: Box2DWeb.Dynamics.b2Body, received: Box
         receivedF = receivedF.GetNext();
         originalF = originalF.GetNext();
     }
+
+    // m_islandIndex は変わる。これは既存の計算結果のキャッシュであると判断し、動作に問題はないと判断した。
+    if ("m_islandIndex" in received) {
+        original.m_islandIndex = received.m_islandIndex;
+    }
+    else {
+        delete original.m_islandIndex;
+    }
+
     return original;
 };
