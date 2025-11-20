@@ -242,7 +242,9 @@ export class Box2DSerializer {
 
             override deserialize(json: ObjectDef<J & EntityParam>): O {
                 const baseParamObj = this._deserializeParameterObject(json.param);
-                const derivedParamObj = Object.keys(json.param).reduce((obj, key: keyof (J & g.EParameterObject)) => {
+                const derivedParamObj = Object.keys(json.param)
+                    .filter(key => !(key in baseParamObj))
+                    .reduce((obj, key: keyof (J & g.EParameterObject)) => {
                     obj[key] = json.param[key];
                     return obj;
                 }, baseParamObj as J & g.EParameterObject);
@@ -292,7 +294,9 @@ export class Box2DSerializer {
 
             override deserialize(json: ObjectDef<J & FilledRectParam>): O {
                 const baseParamObj = this._deserializeParameterObject(json.param);
-                const derivedParamObj = Object.keys(json.param).reduce((obj, key: keyof (J & g.FilledRectParameterObject)) => {
+                const derivedParamObj = Object.keys(json.param)
+                    .filter(key => !(key in baseParamObj))
+                    .reduce((obj, key: keyof (J & g.FilledRectParameterObject)) => {
                     // 謎: これをいれないとエラーになる。 J[cssColor] を参照しようとするらしい。
                     if (key === "cssColor") {
                         obj.cssColor = json.param.cssColor;
@@ -350,7 +354,9 @@ export class Box2DSerializer {
 
             override deserialize(json: ObjectDef<J & SpriteParam>): O {
                 const baseParamObj = this._deserializeParameterObject(json.param);
-                const derivedParamObj = Object.keys(json.param).reduce((obj, key: keyof (J & g.SpriteParameterObject)) => {
+                const derivedParamObj = Object.keys(json.param)
+                    .filter(key => !(key in baseParamObj))
+                    .reduce((obj, key: keyof (J & g.SpriteParameterObject)) => {
                     obj[key] = json.param[key];
                     return obj;
                 }, baseParamObj as J & g.SpriteParameterObject);
@@ -404,7 +410,9 @@ export class Box2DSerializer {
 
             override deserialize(json: ObjectDef<J & FrameSpriteParam>): O {
                 const baseParamObj = this._deserializeParameterObject(json.param);
-                const derivedParamObj = Object.keys(json.param).reduce((obj, key: keyof (J & g.FrameSpriteParameterObject)) => {
+                const derivedParamObj = Object.keys(json.param)
+                    .filter(key => !(key in baseParamObj))
+                    .reduce((obj, key: keyof (J & g.FrameSpriteParameterObject)) => {
                     obj[key] = json.param[key];
                     return obj;
                 }, baseParamObj as J & g.FrameSpriteParameterObject);
@@ -458,7 +466,9 @@ export class Box2DSerializer {
 
             override deserialize(json: ObjectDef<J & LabelParam>): O {
                 const baseParamObj = this._deserializeParameterObject(json.param);
-                const derivedParamObj = Object.keys(json.param).reduce((obj, key: keyof (J & g.LabelParameterObject)) => {
+                const derivedParamObj = Object.keys(json.param)
+                    .filter(key => !(key in baseParamObj))
+                    .reduce((obj, key: keyof (J & g.LabelParameterObject)) => {
                     obj[key] = json.param[key];
                     return obj;
                 }, baseParamObj as J & g.LabelParameterObject);
@@ -511,7 +521,9 @@ export class Box2DSerializer {
 
             override deserialize(json: ObjectDef<J & PaneParam>): O {
                 const baseParamObj = this._deserializeParameterObject(json.param);
-                const derivedParamObj = Object.keys(json.param).reduce((obj, key: keyof (J & g.PaneParameterObject)) => {
+                const derivedParamObj = Object.keys(json.param)
+                    .filter(key => !(key in baseParamObj))
+                    .reduce((obj, key: keyof (J & g.PaneParameterObject)) => {
                     obj[key] = json.param[key];
                     return obj;
                 }, baseParamObj as J & g.PaneParameterObject);
