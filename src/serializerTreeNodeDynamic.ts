@@ -1,11 +1,10 @@
-/**
- * B2DynamicTreeNode オブジェクト型の識別子
- */
-
 import { Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
 import { AABBParam, AABBSerializer } from "./serializerAABB";
 
+/**
+ * B2DynamicTreeNode オブジェクト型の識別子
+ */
 export const dynamicTreeNodeType = Box2DWeb.Collision.b2DynamicTreeNode.name;
 
 /**
