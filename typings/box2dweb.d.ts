@@ -1,18 +1,10 @@
 export {};
 
-/**
- * 直列化・復元に必要な非公開パラメタを公開する
- */
-declare module "box2dweb" {
-    module Box2D {
-        module Common {
-            module Math {
-                interface b2Sweep {
-                    // https://github.com/akashic-games/akashic-box2d/issues/97
-                    t0: number;
-                }
-            }
-        }
+declare module "@akashic-extension/akashic-box2d" {
+    /**
+     * 直列化・復元に必要な非公開パラメタを公開する
+     */
+    module Box2DWeb {
         module Collision {
             interface b2DynamicTreeNode {
                 aabb: b2AABB;
@@ -53,6 +45,10 @@ declare module "box2dweb" {
                     m_constraints: b2ContactConstraint[];
                     // TODO declare methods
                 }
+            }
+
+            class b2TimeStep {
+                // TODO impl
             }
 
             class b2ContactManager {
@@ -142,6 +138,4 @@ declare module "box2dweb" {
             }
         }
     }
-
-    export = Box2D;
 }

@@ -1,4 +1,4 @@
-/// <reference path="../typings/box2dweb.d.ts" />
+/// <reference path="../typings/box2dweb.d.ts" preserve="true" />
 export * from "./objectMapper";
 export * from "./serializerAABB";
 export * from "./serializerBody";
