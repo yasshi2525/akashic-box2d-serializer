@@ -14,13 +14,13 @@ describe("FilledRectSerializer", () => {
             height: 100,
             cssColor: "blue",
         });
-        const entitySerializerSet = new Set<EntitySerializer>();
+        const entitySerializers: EntitySerializer[] = [];
         serializer = new FilledRectSerializer({
             scene: targetScene,
-            entitySerializerSet,
+            entitySerializers,
             plainMatrixSerializer: new PlainMatrixSerializer(),
         });
-        entitySerializerSet.add(serializer);
+        entitySerializers.push(serializer);
     });
 
     it("set matched param", () => {

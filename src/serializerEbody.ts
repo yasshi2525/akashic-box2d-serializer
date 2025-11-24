@@ -31,7 +31,7 @@ export interface EBodyParam {
 export interface EBodySerializerParameterObject {
     box2d: Box2D;
     bodySerializer: BodySerializer;
-    entitySerializerSet: Set<EntitySerializer>;
+    entitySerializers: EntitySerializer[];
     fixtureSerializer: FixtureSerializer;
     sweepSerializer: SweepSerializer;
     vec2Serializer: Vec2Serializer;
@@ -50,7 +50,7 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
     readonly _sweepSerializer: SweepSerializer;
     readonly _vec2Serializer: Vec2Serializer;
     readonly _transformSerializer: TransformSerializer;
-    readonly _entitySerializerSet: Set<EntitySerializer>;
+    readonly _entitySerializers: EntitySerializer[];
     readonly _fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
     readonly _fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
 
@@ -61,7 +61,7 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
         this._sweepSerializer = param.sweepSerializer;
         this._vec2Serializer = param.vec2Serializer;
         this._transformSerializer = param.transformSerializer;
-        this._entitySerializerSet = param.entitySerializerSet;
+        this._entitySerializers = param.entitySerializers;
         this._fixtureMapper = param.fixtureMapper;
         this._fixtureDefMapper = param.fixtureDefMapper;
     }
@@ -120,7 +120,7 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
     }
 
     _findEntitySerializer(objectType: string): EntitySerializer {
-        for (const entitySerializer of this._entitySerializerSet.values()) {
+        for (const entitySerializer of this._entitySerializers) {
             if (entitySerializer.filter(objectType)) {
                 return entitySerializer;
             }

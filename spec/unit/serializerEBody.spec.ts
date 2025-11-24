@@ -39,13 +39,13 @@ describe("EBodySerializer", () => {
         box2d = new Box2D(box2dParam);
         targetBox2D = new Box2D(box2dParam);
 
-        const entitySerializerSet = new Set<EntitySerializer>();
+        const entitySerializers: EntitySerializer[] = [];
         entitySerializer = new EntitySerializer({
             scene: targetScene,
-            entitySerializerSet,
+            entitySerializers,
             plainMatrixSerializer: new PlainMatrixSerializer(),
         });
-        entitySerializerSet.add(entitySerializer);
+        entitySerializers.push(entitySerializer);
         fixtureMapper = new ObjectMapper({
             refTypeName: fixtureRefType,
         });
@@ -78,7 +78,7 @@ describe("EBodySerializer", () => {
         });
         serializer = new EBodySerializer({
             box2d: targetBox2D,
-            entitySerializerSet,
+            entitySerializers,
             bodySerializer,
             fixtureSerializer,
             sweepSerializer,

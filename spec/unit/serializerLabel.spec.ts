@@ -22,14 +22,14 @@ describe("LabelSerializer", () => {
             text: "dummyText",
         };
         label = new g.Label(labelParam);
-        const entitySerializerSet = new Set<EntitySerializer>();
+        const entitySerializers: EntitySerializer[] = [];
         serializer = new LabelSerializer({
             scene: targetScene,
             plainMatrixSerializer: new PlainMatrixSerializer(),
-            entitySerializerSet,
+            entitySerializers,
             fontDeserializer: () => font,
         });
-        entitySerializerSet.add(serializer);
+        entitySerializers.push(serializer);
     });
 
     it("set matched param", () => {

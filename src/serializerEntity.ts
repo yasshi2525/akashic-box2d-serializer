@@ -38,7 +38,7 @@ export interface EntitySerializerParameterObject {
     /**
      * 子エンティティを直列化・復元するためのシリアライザセット
      */
-    entitySerializerSet: Set<EntitySerializer>;
+    entitySerializers: EntitySerializer[];
     plainMatrixSerializer: PlainMatrixSerializer;
 }
 
@@ -47,12 +47,12 @@ export interface EntitySerializerParameterObject {
  */
 export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
     readonly _scene: g.Scene;
-    readonly _entitySerializerSet: Set<EntitySerializer>;
+    readonly _entitySerializers: EntitySerializer[];
     readonly _plainMatrixSerializer: PlainMatrixSerializer;
 
     constructor(param: EntitySerializerParameterObject) {
         this._scene = param.scene;
-        this._entitySerializerSet = param.entitySerializerSet;
+        this._entitySerializers = param.entitySerializers;
         this._plainMatrixSerializer = param.plainMatrixSerializer;
     }
 
@@ -199,7 +199,7 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
     }
 
     _findEntitySerializer(objectType: string): EntitySerializer {
-        for (const entitySerializer of this._entitySerializerSet.values()) {
+        for (const entitySerializer of this._entitySerializers) {
             if (entitySerializer.filter(objectType)) {
                 return entitySerializer;
             }

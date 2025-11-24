@@ -38,17 +38,17 @@ describe("FrameSpriteSerializer", () => {
             height: 200,
         };
         surfaceFrameSprite = new g.FrameSprite(surfaceFrameSpriteParam);
-        const entitySerializerSet = new Set<EntitySerializer>();
+        const entitySerializers: EntitySerializer[] = [];
         serializer = new FrameSpriteSerializer({
             scene: targetScene,
             plainMatrixSerializer: new PlainMatrixSerializer(),
             imageAssetSerializer: new ImageAssetSerializer({
                 scene: targetScene,
             }),
-            entitySerializerSet,
+            entitySerializers,
             surfaceDeserializer: () => surface,
         });
-        entitySerializerSet.add(serializer);
+        entitySerializers.push(serializer);
         targetScene._sceneAssetHolder._assetManager._assets[imageAssetParam.id!] = imageAsset;
     });
 

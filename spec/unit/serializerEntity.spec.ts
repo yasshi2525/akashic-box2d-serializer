@@ -3,17 +3,17 @@ import { PlainMatrixSerializer } from "../../src/serializerMatrixPlain";
 import { createDefaultEntityParam, extractSerializedEntityParam } from "./utils";
 
 describe("EntitySerializer", () => {
-    let entitySerializerSet: Set<EntitySerializer>;
+    let entitySerializers: EntitySerializer[];
     let serializer: EntitySerializer;
 
     beforeEach(() => {
-        entitySerializerSet = new Set<EntitySerializer>();
+        entitySerializers = [];
         serializer = new EntitySerializer({
             scene: targetScene,
-            entitySerializerSet,
+            entitySerializers,
             plainMatrixSerializer: new PlainMatrixSerializer(),
         });
-        entitySerializerSet.add(serializer);
+        entitySerializers.push(serializer);
     });
 
     const createDefaultEntity = () => {

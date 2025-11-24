@@ -89,7 +89,7 @@ export class Box2DSerializer {
     readonly _frameSpriteSerializer: FrameSpriteSerializer;
     readonly _labelSerializer: LabelSerializer;
     readonly _paneSerializer: PaneSerializer;
-    readonly _entitySerializerSet: Set<EntitySerializer>;
+    readonly _entitySerializers: EntitySerializer[];
     readonly _sweepSerializer: SweepSerializer;
     readonly _mat22Serializer: Mat22Serializer;
     readonly _transformSerializer: TransformSerializer;
@@ -138,17 +138,17 @@ export class Box2DSerializer {
             vec2Serializer: this._vec2serializer,
             fixtureMapper: this._fixtureMapper,
         });
-        this._entitySerializerSet = new Set<EntitySerializer>();
+        this._entitySerializers = [];
         this._plainMatrixSerializer = new PlainMatrixSerializer();
         this._entitySerializer = new EntitySerializer({
             scene: this._scene,
             plainMatrixSerializer: this._plainMatrixSerializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this._filledRectSerializer = new FilledRectSerializer({
             scene: this._scene,
             plainMatrixSerializer: this._plainMatrixSerializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this._imageAssetSerializer = new ImageAssetSerializer({
             scene: this._scene,
@@ -158,14 +158,14 @@ export class Box2DSerializer {
             imageAssetSerializer: this._imageAssetSerializer,
             plainMatrixSerializer: this._plainMatrixSerializer,
             surfaceDeserializer: param.srpiteSurfaceDeserializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this._frameSpriteSerializer = new FrameSpriteSerializer({
             scene: this._scene,
             imageAssetSerializer: this._imageAssetSerializer,
             plainMatrixSerializer: this._plainMatrixSerializer,
             surfaceDeserializer: param.frameSpriteSurfaceDeserializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this._labelSerializer = new LabelSerializer({
             scene: this._scene,
@@ -174,21 +174,21 @@ export class Box2DSerializer {
                 ?? (() => {
                     throw new Error("no fontDeserializer is defined in Box2DSerializer");
                 }),
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this._paneSerializer = new PaneSerializer({
             scene: this._scene,
             imageAssetSerializer: this._imageAssetSerializer,
             plainMatrixSerializer: this._plainMatrixSerializer,
             surfaceDeserializer: param.paneSurfaceDeserializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
-        this._entitySerializerSet.add(this._entitySerializer);
-        this._entitySerializerSet.add(this._filledRectSerializer);
-        this._entitySerializerSet.add(this._spriteSerializer);
-        this._entitySerializerSet.add(this._frameSpriteSerializer);
-        this._entitySerializerSet.add(this._labelSerializer);
-        this._entitySerializerSet.add(this._paneSerializer);
+        this._entitySerializers.push(this._entitySerializer);
+        this._entitySerializers.push(this._filledRectSerializer);
+        this._entitySerializers.push(this._spriteSerializer);
+        this._entitySerializers.push(this._frameSpriteSerializer);
+        this._entitySerializers.push(this._labelSerializer);
+        this._entitySerializers.push(this._paneSerializer);
         this._sweepSerializer = new SweepSerializer({
             vec2Serializer: this._vec2serializer,
         });
@@ -206,7 +206,7 @@ export class Box2DSerializer {
             sweepSerializer: this._sweepSerializer,
             vec2Serializer: this._vec2serializer,
             transformSerializer: this._transformSerializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
             fixtureMapper: this._fixtureMapper,
             fixtureDefMapper: this._fixtureDefMapper,
         });
@@ -251,7 +251,7 @@ export class Box2DSerializer {
      * @param serializer エンティティシリアライザ
      */
     addEntitySerializer(serializer: EntitySerializer): void {
-        this._entitySerializerSet.add(serializer);
+        this._entitySerializers.push(serializer);
     }
 
     /**
@@ -301,7 +301,7 @@ export class Box2DSerializer {
         }({
             scene: this._scene,
             plainMatrixSerializer: this._plainMatrixSerializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this.addEntitySerializer(derivedEntitySerializer);
     }
@@ -359,7 +359,7 @@ export class Box2DSerializer {
         }({
             scene: this._scene,
             plainMatrixSerializer: this._plainMatrixSerializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this.addEntitySerializer(derivedFilledRectSerializer);
     }
@@ -415,7 +415,7 @@ export class Box2DSerializer {
             imageAssetSerializer: this._imageAssetSerializer,
             plainMatrixSerializer: this._plainMatrixSerializer,
             surfaceDeserializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this.addEntitySerializer(derivedSpriteSerializer);
     }
@@ -471,7 +471,7 @@ export class Box2DSerializer {
             imageAssetSerializer: this._imageAssetSerializer,
             plainMatrixSerializer: this._plainMatrixSerializer,
             surfaceDeserializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this.addEntitySerializer(derivedSpriteSerializer);
     }
@@ -526,7 +526,7 @@ export class Box2DSerializer {
             scene: this._scene,
             plainMatrixSerializer: this._plainMatrixSerializer,
             fontDeserializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this.addEntitySerializer(derivedLabelSerializer);
     }
@@ -582,7 +582,7 @@ export class Box2DSerializer {
             imageAssetSerializer: this._imageAssetSerializer,
             plainMatrixSerializer: this._plainMatrixSerializer,
             surfaceDeserializer,
-            entitySerializerSet: this._entitySerializerSet,
+            entitySerializers: this._entitySerializers,
         });
         this.addEntitySerializer(derivedPaneSerializer);
     }

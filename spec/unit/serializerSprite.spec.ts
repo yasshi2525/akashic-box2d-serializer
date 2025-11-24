@@ -34,17 +34,17 @@ describe("SpriteSerializer", () => {
             src: surface,
         };
         surfaceSprite = new g.Sprite(surfaceSpriteParam);
-        const entitySerializerSet = new Set<EntitySerializer>();
+        const entitySerializers: EntitySerializer[] = [];
         serializer = new SpriteSerializer({
             scene: targetScene,
             plainMatrixSerializer: new PlainMatrixSerializer(),
             imageAssetSerializer: new ImageAssetSerializer({
                 scene: targetScene,
             }),
-            entitySerializerSet,
+            entitySerializers,
             surfaceDeserializer: () => surface,
         });
-        entitySerializerSet.add(serializer);
+        entitySerializers.push(serializer);
         targetScene._sceneAssetHolder._assetManager._assets[imageAssetParam.id!] = imageAsset;
     });
 

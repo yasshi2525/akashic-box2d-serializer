@@ -46,17 +46,17 @@ describe("PaneSerializer", () => {
             tag: "surface",
         };
         surfacePane = new g.Pane(surfacePaneParam);
-        const entitySerializerSet = new Set<EntitySerializer>();
+        const entitySerializers: EntitySerializer[] = [];
         serializer = new PaneSerializer({
             scene: targetScene,
             plainMatrixSerializer: new PlainMatrixSerializer(),
             imageAssetSerializer: new ImageAssetSerializer({
                 scene: targetScene,
             }),
-            entitySerializerSet,
+            entitySerializers,
             surfaceDeserializer: param => param.tag === surfacePaneParam.tag ? surface : undefined,
         });
-        entitySerializerSet.add(serializer);
+        entitySerializers.push(serializer);
         targetScene._sceneAssetHolder._assetManager._assets[imageAssetParam.id!] = imageAsset;
     });
 
