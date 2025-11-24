@@ -29,6 +29,7 @@ jobs:
           key: dependencies-${{ hashFiles('package-lock.json') }}
       - run: npm run lint:verify
       - run: npm run build
+      - run: npm run test:e2e:setup
       - run: npm test
       - run: npm pack
       - run: npm publish --provenance --access public
