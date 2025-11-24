@@ -62,14 +62,6 @@ export const toExpectedBody = (original: Box2DWeb.Dynamics.b2Body, received: Box
     original.m_prev = received.m_prev;
     original.m_next = received.m_next;
 
-    // m_world の m_contactManager.m_broadPhase.m_tree.m_root.aabb は復元するとなぜか変わる。
-    // おそらく既存の計算結果のキャッシュであると判断し、動作に問題はないと判断した。
-    original.m_world.m_contactManager.m_broadPhase.m_tree.m_root.aabb.lowerBound
-        .SetV(received.m_world.m_contactManager.m_broadPhase.m_tree.m_root.aabb.lowerBound);
-    original.m_world.m_contactManager.m_broadPhase.m_tree.m_root.aabb.upperBound
-        .SetV(received.m_world.m_contactManager.m_broadPhase.m_tree.m_root.aabb.upperBound);
-    original.m_world.m_contactManager.m_broadPhase.m_tree.m_root.userData
-        = received.m_world.m_contactManager.m_broadPhase.m_tree.m_root.userData;
     // fixture は復元時、直列化時刻の値になる。もとの fixture はオブジェクト生成時の値が保存されているので異なっていても問題なし。
     let originalF = original.GetFixtureList();
     let receivedF = received.GetFixtureList();

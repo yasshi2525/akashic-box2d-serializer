@@ -1,3 +1,5 @@
+/// <reference path="../typings/box2dweb.d.ts" />
+export * from "./objectMapper";
 export * from "./serializerAABB";
 export * from "./serializerBody";
 export * from "./serializerBox2D";
@@ -19,5 +21,6 @@ export * from "./serializerShapePolygon";
 export * from "./serializerSprite";
 export * from "./serializerSweep";
 export * from "./serializerTransform";
+export * from "./serializerTreeDynamic";
 export * from "./serializerTreeNodeDynamic";
 export * from "./serializerVec2";

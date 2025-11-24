@@ -1,43 +1,28 @@
-import { Box2D, Box2DBodyDef, Box2DWeb } from "@akashic-extension/akashic-box2d";
-import { FixtureSerializer } from "../../src/serializerFixture";
-import { FilterDataSerializer } from "../../src/serializerFilterData";
-import { ShapeSerializer } from "../../src/serializerShape";
-import { BodyParam, BodySerializer, bodyType } from "../../src/serializerBody";
-import { CircleShapeSerializer } from "../../src/serializerShapeCircle";
-import { PolygonShapeSerializer } from "../../src/serializerShapePolygon";
+import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
+import { fixtureRefType } from "../../src/serializerFixture";
+import { BodySerializer, bodyType } from "../../src/serializerBody";
 import { Vec2Serializer } from "../../src/serializerVec2";
-import { DynamicTreeNodeSerializer } from "../../src/serializerTreeNodeDynamic";
-import { AABBSerializer } from "../../src/serializerAABB";
+import { ObjectMapper, RefParam } from "../../src/objectMapper";
+import { ObjectDef } from "../../src/serializerObject";
 
 describe("BodySerializer", () => {
     let box2d: Box2D;
     let vec2Serializer: Vec2Serializer;
-    let fixtureSerializer: FixtureSerializer;
     let serializer: BodySerializer;
+    let fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
 
     beforeEach(() => {
         box2d = new Box2D({
             gravity: [0, -9.8],
             scale: 10,
         });
-        vec2Serializer = new Vec2Serializer();
-        fixtureSerializer = new FixtureSerializer({
-            filterDataSerializer: new FilterDataSerializer(),
-            shapeSerializer: new ShapeSerializer({
-                circleShapeSerializer: new CircleShapeSerializer(),
-                polygonShapeSerializer: new PolygonShapeSerializer({
-                    vec2Serializer,
-                }),
-            }),
-            dynamicTreeNodeSerializer: new DynamicTreeNodeSerializer({
-                aabbSerializer: new AABBSerializer({
-                    vec2Serializer,
-                }),
-            }),
+        fixtureMapper = new ObjectMapper({
+            refTypeName: fixtureRefType,
         });
+        vec2Serializer = new Vec2Serializer();
         serializer = new BodySerializer({
-            fixtureSerializer,
             vec2Serializer,
+            fixtureMapper,
         });
     });
 
@@ -81,10 +66,15 @@ describe("BodySerializer", () => {
         const { defaultBody, defaultBodyDef } = createDefaultBody();
         const json = serializer.serialize(defaultBody);
         expect(json.type).toEqual(bodyType);
+        expect(fixtureMapper.objects()).toHaveLength(0);
+        const fixtureList: ObjectDef<RefParam>[] = [];
+        for (let f = defaultBody.GetFixtureList(); f; f = f.GetNext()) {
+            fixtureList.push(fixtureMapper.refer(f));
+        }
         const expectedRaw = {
             ...defaultBodyDef,
             linearVelocity: vec2Serializer.serialize(defaultBodyDef.linearVelocity),
-            fixtureList: fixtureSerializer.serialize(defaultBody.GetFixtureList()),
+            fixtureList,
         };
         // 不必要パラメタを消去するためRequired parameter を optional parameter に変換
         const expected: Partial<typeof expectedRaw> = expectedRaw;
@@ -96,10 +86,15 @@ describe("BodySerializer", () => {
     it("can serialize custom body", () => {
         const { customBody, customBodyDef } = createCustomBody();
         const json = serializer.serialize(customBody);
+        expect(fixtureMapper.objects()).toHaveLength(2);
+        const fixtureList: ObjectDef<RefParam>[] = [];
+        for (let f = customBody.GetFixtureList(); f; f = f.GetNext()) {
+            fixtureList.push(fixtureMapper.refer(f));
+        }
         const expectedRaw = {
             ...customBodyDef,
             linearVelocity: vec2Serializer.serialize(customBodyDef.linearVelocity),
-            fixtureList: fixtureSerializer.serialize(customBody.GetFixtureList()),
+            fixtureList,
         };
         // 不必要パラメタを消去するためRequired parameter を optional parameter に変換
         const expected: Partial<typeof expectedRaw> = expectedRaw;

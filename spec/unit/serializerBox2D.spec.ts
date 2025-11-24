@@ -1,7 +1,5 @@
 import { BodyType, Box2D, Box2DParameter, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { Box2DSerializer } from "../../src/serializerBox2D";
-import { SpriteParam, spriteType } from "../../src/serializerSprite";
-import { imageAssetType } from "../../src/serializerImageAsset";
 import { toExpectedEntity } from "./utils";
 
 describe("Box2DSerializer", () => {
@@ -107,6 +105,69 @@ describe("Box2DSerializer", () => {
         });
     });
 
+    const expectToShallowEqualFixture = (received: Box2DWeb.Dynamics.b2Fixture, expected: Box2DWeb.Dynamics.b2Fixture) => {
+        expect(received.GetAABB()).toEqual(expected.GetAABB());
+        expect(received.GetDensity()).toBe(expected.GetDensity());
+        expect(received.GetFilterData()).toEqual(expected.GetFilterData());
+        expect(received.GetFriction()).toBe(expected.GetFriction());
+        expect(received.GetMassData()).toEqual(expected.GetMassData());
+        expect(received.GetRestitution()).toBe(expected.GetRestitution());
+        expect(received.GetShape()).toEqual(expected.GetShape());
+        expect(received.GetType()).toEqual(expected.GetType());
+        expect(received.GetUserData()).toEqual(expected.GetUserData());
+        expect(received.IsSensor()).toBe(expected.IsSensor());
+    };
+
+    const expectToEqualsNode = (received: Box2DWeb.Collision.b2DynamicTreeNode, expected: Box2DWeb.Collision.b2DynamicTreeNode) => {
+        expect(received.aabb).toEqual(expected.aabb);
+        if (expected.userData) {
+            expect(received.userData).toBeTruthy();
+            expectToShallowEqualFixture(received.userData!, expected.userData);
+        }
+        else {
+            expect(received.userData).toBeUndefined();
+        }
+        if (expected.child1) {
+            expect(received.child1).toBeTruthy();
+            expectToEqualsNode(received.child1!, expected.child1);
+        }
+        else {
+            expect(received.child1).toBeUndefined();
+        }
+        if (expected.child2) {
+            expect(received.child2).toBeTruthy();
+            expectToEqualsNode(received.child2!, expected.child2);
+        }
+        else {
+            expect(received.child2).toBeUndefined();
+        }
+    };
+
+    const expectToEqualsTree = (received: Box2DWeb.Collision.b2DynamicTree, expected: Box2DWeb.Collision.b2DynamicTree) => {
+        if (expected.m_root) {
+            expect(received.m_root).toBeTruthy();
+            expectToEqualsNode(received.m_root!, expected.m_root);
+        }
+        else {
+            expect(received.m_root).toBeNull();
+        }
+    };
+
+    it("can serialize g.E", () => {
+        const entity = new g.E({
+            scene,
+            parent: scene,
+        });
+        box2d.createBody(entity, bodyDef, fixtureDef);
+        const json = serializer.serializeBodies();
+        expect(json.bodies).toHaveLength(1);
+        expect(json.fixtures).toHaveLength(1);
+        expect(serializer._fixtureMapper.objects()).toHaveLength(1);
+        expect(serializer._fixtureDefMapper.objects()).toHaveLength(0);
+        expect(json.contactManager.broadPhase.tree).toBeDefined();
+        expect(serializer._dynamicTreeNodeMapper.objects().length).toBeGreaterThan(0);
+    });
+
     it("can deserialize g.E", () => {
         const entity = new g.E({
             scene,
@@ -117,6 +178,12 @@ describe("Box2DSerializer", () => {
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
         expect(ebody[0].entity).toEqual(toExpectedEntity(entity, ebody[0].entity));
+        expect(deserializer._fixtureDefMapper.objects()).toHaveLength(1);
+        expect(deserializer._fixtureMapper.objects().length).toBe(serializer._fixtureMapper.objects().length);
+        expectToEqualsTree(
+            targetBox2D.world.m_contactManager.m_broadPhase.m_tree,
+            box2d.world.m_contactManager.m_broadPhase.m_tree
+        );
     });
 
     it("can deserialize g.FilledRect", () => {

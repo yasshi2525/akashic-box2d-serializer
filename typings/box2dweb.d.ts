@@ -16,18 +16,24 @@ declare module "box2dweb" {
         module Collision {
             interface b2DynamicTreeNode {
                 aabb: b2AABB;
-                userData: Dynamics.b2Fixture;
+                userData?: Dynamics.b2Fixture;
+                parent?: b2DynamicTreeNode;
+                child1?: b2DynamicTreeNode;
+                child2?: b2DynamicTreeNode;
             }
 
             interface b2DynamicTree {
-                m_root: b2DynamicTreeNode;
+                m_root: b2DynamicTreeNode | null;
+                m_freeList: b2DynamicTreeNode | null;
+                m_path: number;
+                m_insertionCount: number;
             }
             interface b2DynamicTreeBroadPhase {
                 m_tree: b2DynamicTree;
                 m_moveBuffer: b2DynamicTreeNode[];
                 m_pairBuffer: b2DynamicTreePair[];
                 m_pairCount: number;
-                m_proxyCount: number;
+                m_proxyCount: number; // 常に NaN で実質機能してない
             }
             class b2DynamicTreePair {
                 // TODO impl

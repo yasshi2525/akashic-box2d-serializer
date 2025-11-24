@@ -1,19 +1,18 @@
 import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
-import { FixtureSerializer, fixtureType } from "../../src/serializerFixture";
+import { fixtureRefType, FixtureSerializer, fixtureType } from "../../src/serializerFixture";
 import { ShapeSerializer } from "../../src/serializerShape";
 import { CircleShapeSerializer } from "../../src/serializerShapeCircle";
 import { PolygonShapeSerializer } from "../../src/serializerShapePolygon";
 import { FilterDataSerializer } from "../../src/serializerFilterData";
 import { Vec2Serializer } from "../../src/serializerVec2";
-import { DynamicTreeNodeSerializer } from "../../src/serializerTreeNodeDynamic";
-import { AABBSerializer } from "../../src/serializerAABB";
+import { ObjectMapper } from "../../src/objectMapper";
 
 describe("FixtureSerializer", () => {
     let box2d: Box2D;
     let serializer: FixtureSerializer;
     let filterDataSerializer: FilterDataSerializer;
     let shapeSerializer: ShapeSerializer;
-    let dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
+    let selfMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
     let bodydef: Box2DWeb.Dynamics.b2BodyDef;
     let body: Box2DWeb.Dynamics.b2Body;
     let circle: Box2DWeb.Collision.Shapes.b2CircleShape;
@@ -31,15 +30,13 @@ describe("FixtureSerializer", () => {
             }),
         });
         filterDataSerializer = new FilterDataSerializer();
-        dynamicTreeNodeSerializer = new DynamicTreeNodeSerializer({
-            aabbSerializer: new AABBSerializer({
-                vec2Serializer,
-            }),
-        }),
+        selfMapper = new ObjectMapper({
+            refTypeName: fixtureRefType,
+        });
         serializer = new FixtureSerializer({
             filterDataSerializer,
             shapeSerializer,
-            dynamicTreeNodeSerializer,
+            selfMapper,
         });
         bodydef = new Box2DWeb.Dynamics.b2BodyDef();
         body = box2d.world.CreateBody(bodydef);
@@ -92,13 +89,10 @@ describe("FixtureSerializer", () => {
         const { defaultFixture, defaultFixtureDef } = createDefaultFixture();
         const json = serializer.serialize(defaultFixture);
         expect(json.type).toBe(fixtureType);
-        expect(json.param).toHaveLength(1);
-        expect(json.param[0]).toEqual({
-            ...{
-                ...defaultFixtureDef,
-                filter: filterDataSerializer.serialize(defaultFixtureDef.filter),
-                m_proxy: defaultFixture.m_proxy ? dynamicTreeNodeSerializer.serialize(defaultFixture.m_proxy) : undefined,
-            },
+        expect(json.param).toEqual({
+            ...defaultFixtureDef,
+            self: selfMapper.refer(defaultFixture),
+            filter: filterDataSerializer.serialize(defaultFixtureDef.filter),
             shape: shapeSerializer.serialize(defaultFixtureDef.shape),
         });
     });
@@ -106,63 +100,26 @@ describe("FixtureSerializer", () => {
     it ("can serialize all properties value", () => {
         const { customFixture, customFixtureDef } = createCustomFixture();
         const json = serializer.serialize(customFixture);
-        expect(json.param).toHaveLength(1);
-        expect(json.param[0]).toEqual({
-            ...{
-                ...customFixtureDef,
-                filter: filterDataSerializer.serialize(customFixtureDef.filter),
-                m_proxy: customFixture.m_proxy ? dynamicTreeNodeSerializer.serialize(customFixture.m_proxy) : undefined,
-            },
+        expect(json.param).toEqual({
+            ...customFixtureDef,
+            self: selfMapper.refer(customFixture),
+            filter: filterDataSerializer.serialize(customFixtureDef.filter),
             shape: shapeSerializer.serialize(customFixtureDef.shape),
         });
-    });
-
-    it ("can serialize multiple fixtures", () => {
-        const { defaultFixture, defaultFixtureDef } = createDefaultFixture();
-        const { customFixture, customFixtureDef } = createCustomFixture();
-        const json = serializer.serialize(body.GetFixtureList());
-        // NOTE: fixture は unshift される。
-        expect(json.param).toEqual([{
-            ...{
-                ...defaultFixtureDef,
-                filter: filterDataSerializer.serialize(defaultFixtureDef.filter),
-                m_proxy: defaultFixture.m_proxy ? dynamicTreeNodeSerializer.serialize(defaultFixture.m_proxy) : undefined,
-            },
-            shape: shapeSerializer.serialize(defaultFixtureDef.shape),
-        }, {
-            ...{
-                ...customFixtureDef,
-                filter: filterDataSerializer.serialize(customFixtureDef.filter),
-                m_proxy: customFixture.m_proxy ? dynamicTreeNodeSerializer.serialize(customFixture.m_proxy) : undefined,
-            },
-            shape: shapeSerializer.serialize(customFixtureDef.shape),
-        }].reverse());
     });
 
     it("can deserialize default fixture", () => {
         const { defaultFixture, defaultFixtureDef } = createDefaultFixture();
         const json = serializer.serialize(defaultFixture);
         const object = serializer.deserialize(json);
-        expect(object).toHaveLength(1);
-        expect(object[0]).toEqual(defaultFixtureDef);
+        expect(object).toEqual(defaultFixtureDef);
     });
 
     it ("can deserialize all properties value", () => {
         const { customFixture, customFixtureDef } = createCustomFixture();
         const json = serializer.serialize(customFixture);
         const object = serializer.deserialize(json);
-        expect(object).toHaveLength(1);
-        expect(object[0]).toEqual(customFixtureDef);
-    });
-
-    it("can deserialize multiple fixtures", () => {
-        const { defaultFixtureDef } = createDefaultFixture();
-        const { customFixtureDef } = createCustomFixture();
-        const json = serializer.serialize(body.GetFixtureList());
-        const object = serializer.deserialize(json);
-        expect(object).toHaveLength(2);
-        // NOTE: fixture は unshift される。
-        expect(object).toEqual([defaultFixtureDef, customFixtureDef].reverse());
+        expect(object).toEqual(customFixtureDef);
     });
 
     it("can deserialize after body interaction", () => {
@@ -171,7 +128,6 @@ describe("FixtureSerializer", () => {
         body.ApplyForce(box2d.vec2(10, 10), box2d.vec2(0, 0));
         box2d.step(10);
         const object = serializer.deserialize(json);
-        expect(object).toHaveLength(1);
-        expect(object[0]).toEqual(defaultFixtureDef);
+        expect(object).toEqual(defaultFixtureDef);
     });
 });

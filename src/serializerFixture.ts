@@ -2,7 +2,7 @@ import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
 import { ShapeParam, ShapeSerializer } from "./serializerShape";
 import { FilterDataParam, FilterDataSerializer } from "./serializerFilterData";
-import { DynamicTreeNodeParam, DynamicTreeNodeSerializer } from "./serializerTreeNodeDynamic";
+import { ObjectMapper, RefParam } from "./objectMapper";
 
 /**
  * B2Fixure オブジェクト型の識別子。
@@ -12,8 +12,14 @@ export const fixtureType = Box2DWeb.Dynamics.b2Fixture.name;
 /**
  * B2Fixure オブジェクトを復元可能な形式で直列化したJSONです。
  * userData は直列化可能でなければなりません。
+ * m_proxy は直列化しません。復元時に対応するオブジェクトをマッピングします。
  */
 export interface FixtureParam {
+    /**
+     * B2Fixture自体には識別子は存在しませんが、
+     * ContactManager と B2Body から参照されるため、参照解決のために付与します。
+     */
+    self: ObjectDef<RefParam>;
     density: number;
     filter: ObjectDef<FilterDataParam>;
     friction: number;
@@ -21,28 +27,32 @@ export interface FixtureParam {
     restitution: number;
     shape: ObjectDef<ShapeParam>;
     userData: any;
-    m_proxy?: ObjectDef<DynamicTreeNodeParam>;
 }
+
+/**
+ * B2Fixure オブジェクトの識別情報（参照解決用）の識別子。
+ */
+export const fixtureRefType = Box2DWeb.Dynamics.b2Fixture.name + "Ref";
 
 export interface FixtureSerializerParameterObject {
     filterDataSerializer: FilterDataSerializer;
     shapeSerializer: ShapeSerializer;
-    dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
+    selfMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
 }
 
 /**
  * B2Fixtureオブジェクトを直列化し、B2FixtureDefオブジェクトに復元します。
  * 非対称な理由は、B2Body を作成するために {@link Box2D#createBody()} に B2FixtureDef を入力する必要があるためです。
  */
-export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Fixture, FixtureParam[], Box2DWeb.Dynamics.b2FixtureDef[]> {
+export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Fixture, FixtureParam, Box2DWeb.Dynamics.b2FixtureDef> {
     readonly filterDataSerializer: FilterDataSerializer;
     readonly shapeSerializer: ShapeSerializer;
-    readonly dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
+    readonly selfMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
 
     constructor(param: FixtureSerializerParameterObject) {
         this.filterDataSerializer = param.filterDataSerializer;
         this.shapeSerializer = param.shapeSerializer;
-        this.dynamicTreeNodeSerializer = param.dynamicTreeNodeSerializer;
+        this.selfMapper = param.selfMapper;
     }
 
     filter(objectType: string): boolean {
@@ -53,37 +63,31 @@ export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2F
      * userData は直列化可能でなければなりません。
      * @inheritdoc
      */
-    serialize(object: Box2DWeb.Dynamics.b2Fixture): ObjectDef<FixtureParam[]> {
-        const fixtureList: FixtureParam[] = [];
-        for (let fixture = object; fixture; fixture = fixture.GetNext()) {
-            fixtureList.push({
-                density: fixture.GetDensity(),
-                filter: this.filterDataSerializer.serialize(fixture.GetFilterData()),
-                friction: fixture.GetFriction(),
-                isSensor: fixture.IsSensor(),
-                restitution: fixture.GetRestitution(),
-                shape: this.shapeSerializer.serialize(fixture.GetShape()),
-                userData: fixture.GetUserData(),
-                m_proxy: fixture.m_proxy ? this.dynamicTreeNodeSerializer.serialize(fixture.m_proxy) : undefined,
-            });
-        }
+    serialize(object: Box2DWeb.Dynamics.b2Fixture): ObjectDef<FixtureParam> {
         return {
             type: fixtureType,
-            param: fixtureList,
+            param: {
+                self: this.selfMapper.refer(object),
+                density: object.GetDensity(),
+                filter: this.filterDataSerializer.serialize(object.GetFilterData()),
+                friction: object.GetFriction(),
+                isSensor: object.IsSensor(),
+                restitution: object.GetRestitution(),
+                shape: this.shapeSerializer.serialize(object.GetShape()),
+                userData: object.GetUserData(),
+            },
         };
     }
 
-    deserialize(json: ObjectDef<FixtureParam[]>): Box2DWeb.Dynamics.b2FixtureDef[] {
-        return json.param.map((param) => {
-            const fixture = new Box2DWeb.Dynamics.b2FixtureDef();
-            fixture.density = param.density;
-            fixture.filter = this.filterDataSerializer.deserialize(param.filter);
-            fixture.friction = param.friction;
-            fixture.isSensor = param.isSensor;
-            fixture.restitution = param.restitution;
-            fixture.shape = this.shapeSerializer.deserialize(param.shape);
-            fixture.userData = param.userData;
-            return fixture;
-        });
+    deserialize(json: ObjectDef<FixtureParam>): Box2DWeb.Dynamics.b2FixtureDef {
+        const fixture = new Box2DWeb.Dynamics.b2FixtureDef();
+        fixture.density = json.param.density;
+        fixture.filter = this.filterDataSerializer.deserialize(json.param.filter);
+        fixture.friction = json.param.friction;
+        fixture.isSensor = json.param.isSensor;
+        fixture.restitution = json.param.restitution;
+        fixture.shape = this.shapeSerializer.deserialize(json.param.shape);
+        fixture.userData = json.param.userData;
+        return fixture;
     }
 }

@@ -1,10 +1,10 @@
-import { Box2D, EBody } from "@akashic-extension/akashic-box2d";
+import { Box2D, Box2DWeb, EBody } from "@akashic-extension/akashic-box2d";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
 import { EBodyParam, EBodySerializer } from "./serializerEbody";
 import { CircleShapeSerializer } from "./serializerShapeCircle";
 import { PolygonShapeSerializer } from "./serializerShapePolygon";
 import { ShapeSerializer } from "./serializerShape";
-import { FixtureSerializer } from "./serializerFixture";
+import { FixtureParam, fixtureRefType, FixtureSerializer } from "./serializerFixture";
 import { BodySerializer } from "./serializerBody";
 import { EntityParam, EntitySerializer } from "./serializerEntity";
 import { FilledRectParam, FilledRectSerializer } from "./serializerFilledRect";
@@ -19,15 +19,22 @@ import { SweepSerializer } from "./serializerSweep";
 import { PlainMatrixSerializer } from "./serializerMatrixPlain";
 import { Mat22Serializer } from "./serializerMat22";
 import { TransformSerializer } from "./serializerTransform";
-import { DynamicTreeNodeSerializer } from "./serializerTreeNodeDynamic";
+import { dynamicTreeNodeRefType, DynamicTreeNodeSerializer } from "./serializerTreeNodeDynamic";
 import { AABBSerializer } from "./serializerAABB";
+import { DynamicTreeParam, DynamicTreeSerializer } from "./serializerTreeDynamic";
+import { ObjectMapper } from "./objectMapper";
 
 /**
- * Box2D オブジェクトを復元可能な形式で直列化したJSONです。
- * bodies 以外は直列化しません。
+ * Box2D の EBody を復元可能な形式で直列化したJSONです。
  */
-export interface Box2DParam {
+export interface Box2DBodiesParam {
     bodies: ObjectDef<EBodyParam>[];
+    fixtures: ObjectDef<FixtureParam>[];
+    contactManager: {
+        broadPhase: {
+            tree: ObjectDef<DynamicTreeParam>;
+        };
+    };
 }
 
 export interface Box2DSerializerParameterObject {
@@ -61,6 +68,9 @@ export interface Box2DSerializerParameterObject {
 export class Box2DSerializer {
     readonly _scene: g.Scene;
     readonly _box2d: Box2D;
+    readonly _fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
+    readonly _fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
+    readonly _dynamicTreeNodeMapper: ObjectMapper<Box2DWeb.Collision.b2DynamicTreeNode>;
     readonly _circleShapeSerializer: CircleShapeSerializer;
     readonly _vec2serializer: Vec2Serializer;
     readonly _polygonShapeSerializer: PolygonShapeSerializer;
@@ -68,6 +78,7 @@ export class Box2DSerializer {
     readonly _filterDataSerializer: FilterDataSerializer;
     readonly _AABBSerializer: AABBSerializer;
     readonly _dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
+    readonly _dynamicTreeSerializer: DynamicTreeSerializer;
     readonly _fixtureSerializer: FixtureSerializer;
     readonly _bodySerializer: BodySerializer;
     readonly _plainMatrixSerializer: PlainMatrixSerializer;
@@ -87,6 +98,15 @@ export class Box2DSerializer {
     constructor(param: Box2DSerializerParameterObject) {
         this._scene = param.scene;
         this._box2d = param.box2d;
+        this._fixtureMapper = new ObjectMapper({
+            refTypeName: fixtureRefType,
+        });
+        this._fixtureDefMapper = new ObjectMapper({
+            refTypeName: fixtureRefType,
+        });
+        this._dynamicTreeNodeMapper = new ObjectMapper({
+            refTypeName: dynamicTreeNodeRefType,
+        });
         this._circleShapeSerializer = new CircleShapeSerializer();
         this._vec2serializer = new Vec2Serializer();
         this._polygonShapeSerializer = new PolygonShapeSerializer({
@@ -102,15 +122,21 @@ export class Box2DSerializer {
         });
         this._dynamicTreeNodeSerializer = new DynamicTreeNodeSerializer({
             aabbSerializer: this._AABBSerializer,
+            selfMapper: this._dynamicTreeNodeMapper,
+            userDataMapper: this._fixtureMapper,
+        });
+        this._dynamicTreeSerializer = new DynamicTreeSerializer({
+            nodeSerializer: this._dynamicTreeNodeSerializer,
+            nodeMapper: this._dynamicTreeNodeMapper,
         });
         this._fixtureSerializer = new FixtureSerializer({
             filterDataSerializer: this._filterDataSerializer,
             shapeSerializer: this._shapeSerializer,
-            dynamicTreeNodeSerializer: this._dynamicTreeNodeSerializer,
+            selfMapper: this._fixtureMapper,
         });
         this._bodySerializer = new BodySerializer({
-            fixtureSerializer: this._fixtureSerializer,
             vec2Serializer: this._vec2serializer,
+            fixtureMapper: this._fixtureMapper,
         });
         this._entitySerializerSet = new Set<EntitySerializer>();
         this._plainMatrixSerializer = new PlainMatrixSerializer();
@@ -180,8 +206,9 @@ export class Box2DSerializer {
             sweepSerializer: this._sweepSerializer,
             vec2Serializer: this._vec2serializer,
             transformSerializer: this._transformSerializer,
-            dynamicTreeNodeSerializer: this._dynamicTreeNodeSerializer,
             entitySerializerSet: this._entitySerializerSet,
+            fixtureMapper: this._fixtureMapper,
+            fixtureDefMapper: this._fixtureDefMapper,
         });
     }
 
@@ -189,8 +216,19 @@ export class Box2DSerializer {
      * 登録されたすべての {@link EBody} を復元可能な形式で直列化します。
      * @returns 直列化されたJSON
      */
-    serializeBodies(): Box2DParam["bodies"] {
-        return this._box2d.bodies.map(ebody => this._eBodySerializer.serialize(ebody));
+    serializeBodies(): Box2DBodiesParam {
+        const bodies = this._box2d.bodies.map(ebody => this._eBodySerializer.serialize(ebody));
+        const tree = this._dynamicTreeSerializer.serialize(this._box2d.world.m_contactManager.m_broadPhase.m_tree);
+        const fixtures = this._fixtureMapper.objects().map(f => this._fixtureSerializer.serialize(f));
+        return {
+            bodies,
+            fixtures,
+            contactManager: {
+                broadPhase: {
+                    tree,
+                },
+            },
+        };
     }
 
     /**
@@ -199,8 +237,13 @@ export class Box2DSerializer {
      * @param json 直列化したJSON
      * @returns 復元された {@link EBody}
      */
-    desrializeBodies(json: Box2DParam["bodies"]): EBody[] {
-        return json.map(obj => this._eBodySerializer.deserialize(obj));
+    desrializeBodies(json: Box2DBodiesParam): EBody[] {
+        for (const f of json.fixtures.map(param => this._fixtureSerializer.deserialize(param))) {
+            this._fixtureDefMapper.refer(f);
+        }
+        const bodies = json.bodies.map(obj => this._eBodySerializer.deserialize(obj));
+        this._box2d.world.m_contactManager.m_broadPhase.m_tree = this._dynamicTreeSerializer.deserialize(json.contactManager.broadPhase.tree);
+        return bodies;
     }
 
     /**

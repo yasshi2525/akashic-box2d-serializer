@@ -2,11 +2,11 @@ import { Box2D, Box2DWeb, EBody } from "@akashic-extension/akashic-box2d";
 import { EntityParam, EntitySerializer } from "./serializerEntity";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
 import { BodyParam, BodySerializer } from "./serializerBody";
-import { FixtureParam, FixtureSerializer } from "./serializerFixture";
+import { FixtureSerializer } from "./serializerFixture";
 import { SweepParam, SweepSerializer } from "./serializerSweep";
 import { Vec2Param, Vec2Serializer } from "./serializerVec2";
 import { TransformParam, TransformSerializer } from "./serializerTransform";
-import { DynamicTreeNodeSerializer } from "./serializerTreeNodeDynamic";
+import { ObjectMapper } from "./objectMapper";
 
 /**
  * {@link EBody} オブジェクト型の識別子。
@@ -36,7 +36,8 @@ export interface EBodySerializerParameterObject {
     sweepSerializer: SweepSerializer;
     vec2Serializer: Vec2Serializer;
     transformSerializer: TransformSerializer;
-    dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
+    fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
+    fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
 }
 
 /**
@@ -49,8 +50,9 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
     readonly _sweepSerializer: SweepSerializer;
     readonly _vec2Serializer: Vec2Serializer;
     readonly _transformSerializer: TransformSerializer;
-    readonly _dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
     readonly _entitySerializerSet: Set<EntitySerializer>;
+    readonly _fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
+    readonly _fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
 
     constructor(param: EBodySerializerParameterObject) {
         this._box2d = param.box2d;
@@ -59,8 +61,9 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
         this._sweepSerializer = param.sweepSerializer;
         this._vec2Serializer = param.vec2Serializer;
         this._transformSerializer = param.transformSerializer;
-        this._dynamicTreeNodeSerializer = param.dynamicTreeNodeSerializer;
         this._entitySerializerSet = param.entitySerializerSet;
+        this._fixtureMapper = param.fixtureMapper;
+        this._fixtureDefMapper = param.fixtureDefMapper;
     }
 
     filter(objectType: string): boolean {
@@ -93,13 +96,13 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
         const ebody = this._box2d.createBody(
             entity,
             this._bodySerializer.deserialize(json.param.b2body.def),
-            this._fixtureSerializer.deserialize(json.param.b2body.def.param.fixtureList)
+            json.param.b2body.def.param.fixtureList.map(ref => this._fixtureDefMapper.resolve(ref))
         );
         if (!ebody) {
             throw new Error(`Failed to create EBody. Please check entity (id = ${entity.id}, class name = ${entity.constructor.name}) is not registered to current scene.`);
         }
         this._deserializeBody(ebody.b2Body, json.param.b2body);
-        this._deserializeFixture(ebody.b2Body.GetFixtureList(), json.param.b2body.def.param.fixtureList);
+        this._referFixture(ebody.b2Body.GetFixtureList());
         return ebody;
     }
 
@@ -110,14 +113,9 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
         b2body.m_xf.Set(this._transformSerializer.deserialize(json.m_xf));
     }
 
-    _deserializeFixture(fixtureList: Box2DWeb.Dynamics.b2Fixture, json: ObjectDef<FixtureParam[]>) {
-        let f = fixtureList;
-        for (const def of json.param) {
-            if (def.m_proxy) {
-                f.m_proxy = this._dynamicTreeNodeSerializer.deserialize(def.m_proxy);
-                f.m_proxy.userData = f;
-            }
-            f = f.GetNext();
+    _referFixture(fixtureList: Box2DWeb.Dynamics.b2Fixture) {
+        for (let f = fixtureList; f; f = f.GetNext()) {
+            this._fixtureMapper.refer(f);
         }
     }
 

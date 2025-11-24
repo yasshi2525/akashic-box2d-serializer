@@ -1,7 +1,7 @@
 import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
-import { FixtureParam, FixtureSerializer } from "./serializerFixture";
 import { Vec2Param, Vec2Serializer } from "./serializerVec2";
+import { ObjectMapper, RefParam } from "./objectMapper";
 
 /**
  * B2Body オブジェクト型の識別子
@@ -12,6 +12,7 @@ export const bodyType = Box2DWeb.Dynamics.b2Body.name;
  * B2Body オブジェクトを復元可能な形式で直列化したJSONです。
  * angle, position は Entity の値が使われるため、B2Bodyの値は直列化しません。
  * userData は直列化可能でなければなりません。
+ * fixtureList は復元時に対応するオブジェクトにマッピングします。
  */
 export interface BodyParam {
     active: boolean;
@@ -21,7 +22,7 @@ export interface BodyParam {
     awake: boolean;
     bullet: boolean;
     fixedRotation: boolean;
-    fixtureList: ObjectDef<FixtureParam[]>;
+    fixtureList: ObjectDef<RefParam>[];
     inertiaScale: number;
     linearDamping: number;
     linearVelocity: ObjectDef<Vec2Param>;
@@ -30,8 +31,8 @@ export interface BodyParam {
 }
 
 export interface BodySerializerParameterObject {
-    fixtureSerializer: FixtureSerializer;
     vec2Serializer: Vec2Serializer;
+    fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
 }
 
 /**
@@ -39,12 +40,12 @@ export interface BodySerializerParameterObject {
  * 非対称な理由は、B2Body を作成するために {@link Box2D#createBody()} に B2BodyDef を入力する必要があるためです。
  */
 export class BodySerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Body, BodyParam, Box2DWeb.Dynamics.b2BodyDef> {
-    readonly _fixtureSerializer: FixtureSerializer;
     readonly _vec2Serializer: Vec2Serializer;
+    readonly _fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
 
     constructor(param: BodySerializerParameterObject) {
-        this._fixtureSerializer = param.fixtureSerializer;
         this._vec2Serializer = param.vec2Serializer;
+        this._fixtureMapper = param.fixtureMapper;
     }
 
     filter(objectType: string): boolean {
@@ -57,6 +58,10 @@ export class BodySerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Body
      * @inheritdoc
      */
     serialize(object: Box2DWeb.Dynamics.b2Body): ObjectDef<BodyParam> {
+        const fixtureList: ObjectDef<RefParam>[] = [];
+        for (let f = object.GetFixtureList(); f; f = f.GetNext()) {
+            fixtureList.push(this._fixtureMapper.refer(f));
+        }
         return {
             type: bodyType,
             param: {
@@ -67,7 +72,7 @@ export class BodySerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Body
                 awake: object.IsAwake(),
                 bullet: object.IsBullet(),
                 fixedRotation: object.IsFixedRotation(),
-                fixtureList: this._fixtureSerializer.serialize(object.GetFixtureList()),
+                fixtureList,
                 inertiaScale: object.GetDefinition().inertiaScale,
                 linearDamping: object.GetLinearDamping(),
                 linearVelocity: this._vec2Serializer.serialize(object.GetLinearVelocity()),
