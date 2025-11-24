@@ -31,6 +31,6 @@ module.exports = () => {
         JSON.stringify(gameJson, null, 4),
         { encoding: "utf-8" },
     );
-    execSync(`akashic scan asset --cwd ${projectDir}`);
-    execSync(`akashic scan globalScripts --cwd ${projectDir}`);
+    execSync(`akashic scan asset`, { cwd: projectDir });
+    execSync(`akashic scan globalScripts`, { cwd: projectDir });
 };
