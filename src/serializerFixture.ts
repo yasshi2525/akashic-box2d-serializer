@@ -45,14 +45,14 @@ export interface FixtureSerializerParameterObject {
  * 非対称な理由は、B2Body を作成するために {@link Box2D#createBody()} に B2FixtureDef を入力する必要があるためです。
  */
 export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Fixture, FixtureParam, Box2DWeb.Dynamics.b2FixtureDef> {
-    readonly filterDataSerializer: FilterDataSerializer;
-    readonly shapeSerializer: ShapeSerializer;
-    readonly selfMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
+    readonly _filterDataSerializer: FilterDataSerializer;
+    readonly _shapeSerializer: ShapeSerializer;
+    readonly _selfMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
 
     constructor(param: FixtureSerializerParameterObject) {
-        this.filterDataSerializer = param.filterDataSerializer;
-        this.shapeSerializer = param.shapeSerializer;
-        this.selfMapper = param.selfMapper;
+        this._filterDataSerializer = param.filterDataSerializer;
+        this._shapeSerializer = param.shapeSerializer;
+        this._selfMapper = param.selfMapper;
     }
 
     filter(objectType: string): boolean {
@@ -67,13 +67,13 @@ export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2F
         return {
             type: fixtureType,
             param: {
-                self: this.selfMapper.refer(object),
+                self: this._selfMapper.refer(object),
                 density: object.GetDensity(),
-                filter: this.filterDataSerializer.serialize(object.GetFilterData()),
+                filter: this._filterDataSerializer.serialize(object.GetFilterData()),
                 friction: object.GetFriction(),
                 isSensor: object.IsSensor(),
                 restitution: object.GetRestitution(),
-                shape: this.shapeSerializer.serialize(object.GetShape()),
+                shape: this._shapeSerializer.serialize(object.GetShape()),
                 userData: object.GetUserData(),
             },
         };
@@ -82,11 +82,11 @@ export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2F
     deserialize(json: ObjectDef<FixtureParam>): Box2DWeb.Dynamics.b2FixtureDef {
         const fixture = new Box2DWeb.Dynamics.b2FixtureDef();
         fixture.density = json.param.density;
-        fixture.filter = this.filterDataSerializer.deserialize(json.param.filter);
+        fixture.filter = this._filterDataSerializer.deserialize(json.param.filter);
         fixture.friction = json.param.friction;
         fixture.isSensor = json.param.isSensor;
         fixture.restitution = json.param.restitution;
-        fixture.shape = this.shapeSerializer.deserialize(json.param.shape);
+        fixture.shape = this._shapeSerializer.deserialize(json.param.shape);
         fixture.userData = json.param.userData;
         return fixture;
     }
