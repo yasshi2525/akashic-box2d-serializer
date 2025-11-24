@@ -13,6 +13,19 @@ const unitConfig = {
 }
 
 /**
+ * @type {import("@jest/types").Config.ProjectConfig}
+ */
+const e2eConfig = {
+  displayName: "e2e",
+  testMatch: ["<rootDir>/spec/e2e/**/*.spec.ts"],
+  testPathIgnorePatterns: ["<rootDir>/spec/e2e/project"],
+  globalSetup: "<rootDir>/spec/env/e2e-setup.cjs",
+  ...createDefaultPreset({
+    tsconfig: "<rootDir>/spec/e2e/tsconfig.json"
+  }),
+}
+
+/**
  * @type {import("jest").Config}
  */
 export default {
@@ -21,6 +34,7 @@ export default {
   coverageDirectory: "coverage",
   coverageReporters: ["lcov"],
   projects: [
-    unitConfig
+    unitConfig,
+    e2eConfig
   ]
 }

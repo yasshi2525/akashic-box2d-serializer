@@ -21,7 +21,8 @@
     "url": "https://github.com/yasshi2525/akashic-box2d-serializer/issues"
   },
   "files": [
-    "lib"
+    "lib",
+    "typings"
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -29,6 +30,8 @@
     "build": "tsc",
     "lint": "eslint . --fix",
     "lint:verify": "eslint .",
+    "test:e2e:setup": "npm i --prefix spec/e2e/project",
+    "test:e2e": "jest --selectProjects e2e",
     "test": "jest",
     "clean": "rimraf lib"
   },

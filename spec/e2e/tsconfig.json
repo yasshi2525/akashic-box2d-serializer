@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "jest"],
+    "paths": {
+      "@yasshi2525/akashic-box2d-serializer": ["../../lib"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "../../typings/**/*.d.ts"
+  ],
+  "files": [
+    "project/node_modules/@akashic/akashic-engine/index.runtime.d.ts",
+    "project/node_modules/@akashic-extension/akashic-box2d/typings/box2dweb.d.ts"
+  ],
+  "exclude": [
+    "project"
+  ]
+}

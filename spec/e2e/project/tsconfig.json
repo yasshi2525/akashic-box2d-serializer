@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "types": [],
+    "outDir": "script",
+    "strict": true,
+    "allowUmdGlobalAccess": true,
+    "forceConsistentCasingInFileNames": true,
+  },
+  "files": [
+    "node_modules/@akashic/akashic-engine/index.runtime.d.ts",
+    "node_modules/@akashic-extension/akashic-box2d/typings/box2dweb.d.ts"
+  ],
+  "include": [
+    "src/**/*.ts"
+  ]
+}
