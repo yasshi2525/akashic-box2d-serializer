@@ -3,7 +3,7 @@ import { ObjectDef, ObjectSerializer } from "./serializerObject";
 /**
  * PlainMatrix オブジェクト型の識別子。
  */
-export const plainMatrixType = g.PlainMatrix.name;
+export const plainMatrixType = "PlainMatrix";
 
 /**
  * PlainMatrix オブジェクトを復元可能な形式で直列化したJSONです。

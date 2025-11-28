@@ -4,7 +4,7 @@ import { ObjectDef, ObjectSerializer } from "./serializerObject";
 /**
  * g.Label オブジェクト型の識別子
  */
-export const labelType = g.Label.name;
+export const labelType = "Label";
 
 /**
  * g.Label オブジェクトを復元可能な形式で直列化したJSONです。
