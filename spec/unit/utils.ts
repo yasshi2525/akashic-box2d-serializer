@@ -47,40 +47,62 @@ export const toExpectedEntity = (original: g.E, received: g.E): g.E => {
     return original;
 };
 
-/**
- * 直列化前のオブジェクトを復元後のあるべきオブジェクトに変換します。
- * original の値を直接書き換えるので注意。
- * @param original 直列化前のオブジェクト
- * @param received 復元後のオブジェクト
- */
-export const toExpectedBody = (original: Box2DWeb.Dynamics.b2Body, received: Box2DWeb.Dynamics.b2Body): Box2DWeb.Dynamics.b2Body => {
-    // worldは差し替わる
-    original.m_world = received.m_world;
-    original.m_world.m_contactManager.m_world = received.m_world;
+const expectToShallowEqualVec2 = (received: Box2DWeb.Common.Math.b2Vec2, expected: Box2DWeb.Common.Math.b2Vec2) => {
+    // -0 と 0 が混在するため
+    expect(received.x === expected.x).toBe(true);
+    expect(received.y === expected.y).toBe(true);
+};
 
-    // prev, next は差し替わる
-    original.m_prev = received.m_prev;
-    original.m_next = received.m_next;
+const expectToShallowEqualShape = (received: Box2DWeb.Collision.Shapes.b2Shape, expected: Box2DWeb.Collision.Shapes.b2Shape) => {
+    // -0 と 0 が混在するため
+    expect(received.GetType() === expected.GetType()).toBe(true);
+};
 
-    // fixture は復元時、直列化時刻の値になる。もとの fixture はオブジェクト生成時の値が保存されているので異なっていても問題なし。
-    let originalF = original.GetFixtureList();
+export const expectToShallowEqualFixture = (received: Box2DWeb.Dynamics.b2Fixture, expected: Box2DWeb.Dynamics.b2Fixture, onlyComparesDefinition: boolean = false) => {
+    if (!onlyComparesDefinition) {
+        expect(received.GetAABB()).toEqual(expected.GetAABB());
+    }
+    expect(received.GetDensity()).toBe(expected.GetDensity());
+    expect(received.GetFilterData()).toEqual(expected.GetFilterData());
+    expect(received.GetFriction()).toBe(expected.GetFriction());
+    expect(received.GetMassData()).toEqual(expected.GetMassData());
+    expect(received.GetRestitution()).toBe(expected.GetRestitution());
+    expectToShallowEqualShape(received.GetShape(), expected.GetShape());
+    expect(received.GetType()).toEqual(expected.GetType());
+    expect(received.GetUserData()).toEqual(expected.GetUserData());
+    expect(received.IsSensor()).toBe(expected.IsSensor());
+};
+
+export const expectToShallowEqualBody = (received: Box2DWeb.Dynamics.b2Body, expected: Box2DWeb.Dynamics.b2Body) => {
+    expect(received.GetAngle()).toBe(expected.GetAngle());
+    expect(received.GetAngularDamping()).toBe(expected.GetAngularDamping());
+    expect(received.GetAngularVelocity()).toEqual(expected.GetAngularVelocity());
+    expect(received.GetDefinition()).toEqual(expected.GetDefinition());
     let receivedF = received.GetFixtureList();
-    while (receivedF && originalF) {
-        originalF.GetAABB().lowerBound.SetV(receivedF.GetAABB().lowerBound);
-        originalF.GetAABB().upperBound.SetV(receivedF.GetAABB().upperBound);
-        originalF.m_body = receivedF.m_body;
-        originalF.m_proxy = receivedF.m_proxy;
+    let expectedF = expected.GetFixtureList();
+    while (receivedF && expectedF) {
+        expectToShallowEqualFixture(receivedF, expectedF, true);
         receivedF = receivedF.GetNext();
-        originalF = originalF.GetNext();
+        expectedF = expectedF.GetNext();
+        if (!receivedF) {
+            expect(expectedF).toBeFalsy();
+        }
+        if (!expectedF) {
+            expect(receivedF).toBeFalsy();
+        }
     }
-
-    // m_islandIndex は変わる。これは既存の計算結果のキャッシュであると判断し、動作に問題はないと判断した。
-    if ("m_islandIndex" in received) {
-        original.m_islandIndex = received.m_islandIndex;
-    }
-    else {
-        delete original.m_islandIndex;
-    }
-
-    return original;
+    expect(received.GetInertia()).toBe(expected.GetInertia());
+    expect(received.GetAngle()).toBe(expected.GetAngle());
+    expect(received.GetLinearDamping()).toBe(expected.GetLinearDamping());
+    expect(received.GetLinearVelocity()).toEqual(expected.GetLinearVelocity());
+    expect(received.GetMass()).toBe(expected.GetMass());
+    expect(received.GetPosition()).toEqual(expected.GetPosition());
+    expect(received.GetTransform()).toEqual(expected.GetTransform());
+    expect(received.GetType()).toBe(expected.GetType());
+    expect(received.GetUserData()).toBe(expected.GetUserData());
+    expect(received.IsActive()).toBe(expected.IsActive());
+    expect(received.IsAwake()).toBe(expected.IsAwake());
+    expect(received.IsBullet()).toBe(expected.IsBullet());
+    expect(received.IsFixedRotation()).toBe(expected.IsFixedRotation());
+    expect(received.IsSleepingAllowed()).toBe(expected.IsSleepingAllowed());
 };

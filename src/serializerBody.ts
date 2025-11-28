@@ -60,7 +60,8 @@ export class BodySerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Body
     serialize(object: Box2DWeb.Dynamics.b2Body): ObjectDef<BodyParam> {
         const fixtureList: ObjectDef<RefParam>[] = [];
         for (let f = object.GetFixtureList(); f; f = f.GetNext()) {
-            fixtureList.push(this._fixtureMapper.refer(f));
+            // createBody するときの定義順にあわせるため、 reverse する
+            fixtureList.unshift(this._fixtureMapper.refer(f));
         }
         return {
             type: bodyType,

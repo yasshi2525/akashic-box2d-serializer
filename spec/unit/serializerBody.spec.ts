@@ -89,7 +89,7 @@ describe("BodySerializer", () => {
         expect(fixtureMapper.objects()).toHaveLength(2);
         const fixtureList: ObjectDef<RefParam>[] = [];
         for (let f = customBody.GetFixtureList(); f; f = f.GetNext()) {
-            fixtureList.push(fixtureMapper.refer(f));
+            fixtureList.unshift(fixtureMapper.refer(f));
         }
         const expectedRaw = {
             ...customBodyDef,

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v0.1.4
+
+* Bug Fixes
+  * `b2Body` に複数の `b2Fixture` を定義している場合、逆順に復元してしまう問題を修正
+
 ## v0.1.3
 
 * Bug Fixes

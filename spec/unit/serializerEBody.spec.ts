@@ -1,6 +1,6 @@
 import { Box2D, Box2DWeb, EBody, BodyType, Box2DParameter } from "@akashic-extension/akashic-box2d";
 import { EBodySerializer, ebodyType } from "../../src/serializerEbody";
-import { createDefaultEntityParam, extractSerializedEntityParam, toExpectedBody, toExpectedEntity } from "./utils";
+import { createDefaultEntityParam, extractSerializedEntityParam, expectToShallowEqualBody, toExpectedEntity } from "./utils";
 import { EntitySerializer } from "../../src/serializerEntity";
 import { BodySerializer } from "../../src/serializerBody";
 import { fixtureRefType, FixtureSerializer } from "../../src/serializerFixture";
@@ -30,7 +30,7 @@ describe("EBodySerializer", () => {
     let ebody: EBody;
     let entityParam: g.EParameterObject;
     let bodyDef: Box2DWeb.Dynamics.b2BodyDef;
-    let fixtureDef: Box2DWeb.Dynamics.b2FixtureDef;
+    let fixtureDefs: Box2DWeb.Dynamics.b2FixtureDef[];
     beforeEach(() => {
         const box2dParam: Box2DParameter = {
             gravity: [0, -9.8],
@@ -94,10 +94,16 @@ describe("EBodySerializer", () => {
         bodyDef = box2d.createBodyDef({
             type: BodyType.Dynamic,
         });
-        fixtureDef = box2d.createFixtureDef({
-            shape: box2d.createCircleShape(10),
-        });
-        ebody = box2d.createBody(new g.E(entityParam), bodyDef, fixtureDef)!;
+        fixtureDefs = [
+            box2d.createFixtureDef({
+                shape: box2d.createCircleShape(10),
+                userData: "1.circle",
+            }),
+            box2d.createFixtureDef({
+                shape: box2d.createRectShape(100, 200),
+                userData: "2.rect",
+            })];
+        ebody = box2d.createBody(new g.E(entityParam), bodyDef, fixtureDefs)!;
     });
 
     it("set matched param", () => {
@@ -108,7 +114,7 @@ describe("EBodySerializer", () => {
     it("can serialize ebody", () => {
         const json = serializer.serialize(ebody);
         expect(json.type).toBe(ebodyType);
-        expect(fixtureMapper.objects()).toHaveLength(1);
+        expect(fixtureMapper.objects()).toHaveLength(2);
         expect(fixtureDefMapper.objects()).toHaveLength(0);
         expect(json.param).toEqual({
             b2body: {
@@ -147,15 +153,12 @@ describe("EBodySerializer", () => {
 
     it("can deserialize ebody", () => {
         const json = serializer.serialize(ebody);
-        for (const param of fixtureMapper.objects().map(f => fixtureSerializer.serialize(f))) {
-            fixtureDefMapper.refer(fixtureSerializer.deserialize(param));
+        for (const [id, f] of fixtureMapper._refToObject.entries()) {
+            fixtureDefMapper.referStrict(id, fixtureSerializer.deserialize(fixtureSerializer.serialize(f)));
         }
         const object = serializer.deserialize(json);
-        expect(object).toEqual({
-            id: ebody.id,
-            b2Body: toExpectedBody(ebody.b2Body, object.b2Body),
-            entity: toExpectedEntity(ebody.entity, object.entity),
-        });
+        expectToShallowEqualBody(object.b2Body, ebody.b2Body);
+        expect(object.entity).toEqual(toExpectedEntity(ebody.entity, object.entity));
     });
 
     it("can deserialize interacted ebody", async () => {
@@ -167,10 +170,7 @@ describe("EBodySerializer", () => {
             fixtureDefMapper.refer(fixtureSerializer.deserialize(param));
         }
         const object = serializer.deserialize(json);
-        expect(object).toEqual({
-            id: ebody.id,
-            b2Body: toExpectedBody(ebody.b2Body, object.b2Body),
-            entity: toExpectedEntity(ebody.entity, object.entity),
-        });
+        expectToShallowEqualBody(object.b2Body, ebody.b2Body);
+        expect(object.entity).toEqual(toExpectedEntity(ebody.entity, object.entity));
     });
 });
