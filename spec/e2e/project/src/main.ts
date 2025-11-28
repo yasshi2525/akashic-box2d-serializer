@@ -81,7 +81,6 @@ export = (param: g.GameMainParameterObject): void => {
                     const del = box2d.bodies[Math.floor(rand * box2d.bodies.length)];
                     box2d.removeBody(del);
                     del.entity.destroy();
-                    console.log(g.game.selfId, "destroy", del.entity.id);
                 }
             }
             g.game.vars.tick++;

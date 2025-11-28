@@ -101,6 +101,7 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
         if (!ebody) {
             throw new Error(`Failed to create EBody. Please check entity (id = ${entity.id}, class name = ${entity.constructor.name}) is not registered to current scene.`);
         }
+        ebody.id = json.param.id;
         this._deserializeBody(ebody.b2Body, json.param.b2body);
         this._referFixture(json.param.b2body.def.param.fixtureList, ebody.b2Body.GetFixtureList());
         return ebody;
