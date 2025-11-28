@@ -13,8 +13,7 @@
     "skipLibCheck": true
   },
   "files": [
-    "./node_modules/@akashic/akashic-engine/index.runtime.d.ts",
-    "./node_modules/@akashic-extension/akashic-box2d/typings/box2dweb.d.ts"
+    "./node_modules/@akashic/akashic-engine/index.runtime.d.ts"
   ],
   "include": [
     "./src/**/*.ts",

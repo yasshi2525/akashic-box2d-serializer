@@ -220,7 +220,7 @@ export class Box2DSerializer {
         const bodies = this._box2d.bodies.map(ebody => this._eBodySerializer.serialize(ebody));
         const tree = this._dynamicTreeSerializer.serialize(this._box2d.world.m_contactManager.m_broadPhase.m_tree);
         const fixtures = this._fixtureMapper.objects().map(f => this._fixtureSerializer.serialize(f));
-        return {
+        const result = {
             bodies,
             fixtures,
             contactManager: {
@@ -229,6 +229,8 @@ export class Box2DSerializer {
                 },
             },
         };
+        this._cleanup();
+        return result;
     }
 
     /**
@@ -243,6 +245,7 @@ export class Box2DSerializer {
         }
         const bodies = json.bodies.map(obj => this._eBodySerializer.deserialize(obj));
         this._box2d.world.m_contactManager.m_broadPhase.m_tree = this._dynamicTreeSerializer.deserialize(json.contactManager.broadPhase.tree);
+        this._cleanup();
         return bodies;
     }
 
@@ -585,5 +588,15 @@ export class Box2DSerializer {
             entitySerializers: this._entitySerializers,
         });
         this.addEntitySerializer(derivedPaneSerializer);
+    }
+
+    /**
+     * 繰り返し serialize/deserialize すると、前回の参照が残ってしまって削除された要素を参照する可能性がある。
+     * そのため、 serialize/deserialize ごとにキャッシュを削除する。
+     */
+    _cleanup(): void {
+        this._fixtureMapper.clear();
+        this._fixtureDefMapper.clear();
+        this._dynamicTreeNodeMapper.clear();
     }
 }
