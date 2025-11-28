@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v0.1.2
+
+* Bug Fixes
+  * `b2DynamicTree` の `m_freeList` をデシリアライズ出来ない問題を修正
+
 ## v0.1.1
 
 * Bug Fixes
