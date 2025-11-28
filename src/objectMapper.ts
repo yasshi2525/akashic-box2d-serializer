@@ -58,4 +58,10 @@ export class ObjectMapper<O> {
     objects(): O[] {
         return [...this._objectToRef.keys()];
     }
+
+    clear(): void {
+        this._objectToRef.clear();
+        this._refToObject.clear();
+        this._nextRefID = 1;
+    }
 }

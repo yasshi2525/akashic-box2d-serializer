@@ -162,10 +162,10 @@ describe("Box2DSerializer", () => {
         const json = serializer.serializeBodies();
         expect(json.bodies).toHaveLength(1);
         expect(json.fixtures).toHaveLength(1);
-        expect(serializer._fixtureMapper.objects()).toHaveLength(1);
-        expect(serializer._fixtureDefMapper.objects()).toHaveLength(0);
+        expect(serializer._fixtureMapper.objects()).toHaveLength(0); // check cache is cleared.
+        expect(serializer._fixtureDefMapper.objects()).toHaveLength(0); // check cache is cleared.
         expect(json.contactManager.broadPhase.tree).toBeDefined();
-        expect(serializer._dynamicTreeNodeMapper.objects().length).toBeGreaterThan(0);
+        expect(serializer._dynamicTreeNodeMapper.objects()).toHaveLength(0); // check cache is cleared.
     });
 
     it("can deserialize g.E", () => {
@@ -178,8 +178,9 @@ describe("Box2DSerializer", () => {
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
         expect(ebody[0].entity).toEqual(toExpectedEntity(entity, ebody[0].entity));
-        expect(deserializer._fixtureDefMapper.objects()).toHaveLength(1);
-        expect(deserializer._fixtureMapper.objects().length).toBe(serializer._fixtureMapper.objects().length);
+        expect(deserializer._fixtureDefMapper.objects()).toHaveLength(0); // check cache is cleared.
+        expect(deserializer._fixtureMapper.objects()).toHaveLength(0); // check cache is cleared.
+        expect(deserializer._dynamicTreeNodeMapper.objects()).toHaveLength(0); // check cache is cleared.
         expectToEqualsTree(
             targetBox2D.world.m_contactManager.m_broadPhase.m_tree,
             box2d.world.m_contactManager.m_broadPhase.m_tree
