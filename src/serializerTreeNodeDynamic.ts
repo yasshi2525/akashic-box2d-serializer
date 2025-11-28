@@ -20,8 +20,8 @@ export interface DynamicTreeNodeParam {
      */
     self: ObjectDef<RefParam>;
     aabb: ObjectDef<AABBParam>;
-    child1?: ObjectDef<DynamicTreeNodeParam>;
-    child2?: ObjectDef<DynamicTreeNodeParam>;
+    child1?: ObjectDef<RefParam>;
+    child2?: ObjectDef<RefParam>;
     userData?: ObjectDef<RefParam>;
 }
 
@@ -67,26 +67,21 @@ export class DynamicTreeNodeSerializer implements ObjectSerializer<Box2DWeb.Coll
                 self: this._selfMapper.refer(object),
                 aabb: this._AABBSerializer.serialize(object.aabb),
                 userData: object.userData ? this._userDataMapper.refer(object.userData) : undefined,
-                child1: object.child1 ? this.serialize(object.child1) : undefined,
-                child2: object.child2 ? this.serialize(object.child2) : undefined,
+                child1: object.child1 ? this._selfMapper.refer(object.child1) : undefined,
+                child2: object.child2 ? this._selfMapper.refer(object.child2) : undefined,
             },
         };
     }
 
+    /**
+     * parent, child1, child2 は インスタンス化後に解決します
+     */
     deserialize(json: ObjectDef<DynamicTreeNodeParam>): Box2DWeb.Collision.b2DynamicTreeNode {
         const proxy = new Box2DWeb.Collision.b2DynamicTreeNode();
         proxy.aabb = this._AABBSerializer.deserialize(json.param.aabb);
         if (json.param.userData) {
             proxy.userData = this._userDataMapper.resolve(json.param.userData);
             proxy.userData.m_proxy = proxy;
-        }
-        if (json.param.child1) {
-            proxy.child1 = this.deserialize(json.param.child1);
-            proxy.child1.parent = proxy;
-        }
-        if (json.param.child2) {
-            proxy.child2 = this.deserialize(json.param.child2);
-            proxy.child2.parent = proxy;
         }
         return proxy;
     }

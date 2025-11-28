@@ -1,5 +1,5 @@
 import { Box2DWeb } from "@akashic-extension/akashic-box2d";
-import { ObjectMapper } from "../../src/objectMapper";
+import { ObjectMapper, RefParam } from "../../src/objectMapper";
 import { AABBSerializer } from "../../src/serializerAABB";
 import { DynamicTreeSerializer, dynamicTreeType } from "../../src/serializerTreeDynamic";
 import { DynamicTreeNodeParam, dynamicTreeNodeRefType, DynamicTreeNodeSerializer } from "../../src/serializerTreeNodeDynamic";
@@ -60,16 +60,21 @@ describe("DynamicTreeNodeSerializer", () => {
         return { tree, nodes };
     };
 
-    const expectToEqualsNodeRef = (json: ObjectDef<DynamicTreeNodeParam>, object: Box2DWeb.Collision.b2DynamicTreeNode) => {
-        expect(json.param.self).toEqual(nodeMapper.refer(object));
+    const expectToEqualsNodeRef = (list: ObjectDef<DynamicTreeNodeParam>[], expectedRef: ObjectDef<RefParam>, object: Box2DWeb.Collision.b2DynamicTreeNode) => {
+        const expected = list.find(n => n.param.self.param.id === expectedRef.param.id)!;
+        expect(expected.param.self).toEqual(nodeMapper.refer(object));
         if (object.userData) {
-            expect(json.param.userData).toEqual(userDataMapper.refer(object.userData));
+            expect(expected.param.userData).toEqual(userDataMapper.refer(object.userData));
         }
         if (object.child1) {
-            expectToEqualsNodeRef(json.param.child1!, object.child1);
+            expect(expected.param.child1).toBeDefined();
+            expect(expected.param.child1).toEqual(nodeMapper.refer(object.child1));
+            expectToEqualsNodeRef(list, expected.param.child1!, object.child1);
         }
         if (object.child2) {
-            expectToEqualsNodeRef(json.param.child2!, object.child2);
+            expect(expected.param.child2).toBeDefined();
+            expect(expected.param.child2).toEqual(nodeMapper.refer(object.child2));
+            expectToEqualsNodeRef(list, expected.param.child2!, object.child2);
         }
     };
 
@@ -116,8 +121,8 @@ describe("DynamicTreeNodeSerializer", () => {
             path: tree.m_path,
             insertionCount: tree.m_insertionCount,
         });
-        expect(json.param.root).toEqual(nodeSerializer.serialize(tree.m_root!));
-        expectToEqualsNodeRef(json.param.root!, tree.m_root!);
+        expect(json.param.root).toEqual(nodeMapper.refer(tree.m_root!));
+        expectToEqualsNodeRef(json.param.nodeList, json.param.root!, tree.m_root!);
         expect(nodeMapper.objects()).toHaveLength(nodes.length + 2);
     });
 
@@ -136,5 +141,14 @@ describe("DynamicTreeNodeSerializer", () => {
             m_insertionCount: tree.m_insertionCount,
         });
         expectToEqualsNode(object.m_root!, tree.m_root!);
+    });
+
+    it("can deserialize tree with freeList", () => {
+        const { tree, nodes } = createCustomTree();
+        tree.m_freeList = nodes[nodes.length - 1];
+        const json = serializer.serialize(tree);
+        const object = deserializer.deserialize(json);
+        expect(object.m_freeList).toBeTruthy();
+        expectToEqualsNode(object.m_freeList!, tree.m_freeList!);
     });
 });
