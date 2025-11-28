@@ -130,4 +130,18 @@ describe("FixtureSerializer", () => {
         const object = serializer.deserialize(json);
         expect(object).toEqual(defaultFixtureDef);
     });
+
+    it("can serialize shapeless fixture", () => {
+        const fixture = new Box2DWeb.Dynamics.b2Fixture();
+        expect(fixture.GetShape()).toBeFalsy();
+        const json = serializer.serialize(fixture);
+        expect(json.param.shape).toBeUndefined();
+    });
+
+    it("can deserialize shapeless fixture", () => {
+        const fixture = new Box2DWeb.Dynamics.b2Fixture();
+        const json = serializer.serialize(fixture);
+        const object = serializer.deserialize(json);
+        expect(object.shape).toBeFalsy();
+    });
 });

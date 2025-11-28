@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v0.1.3
+
+* Bug Fixes
+  * `b2Fixture#GetShape()` が `null` を返すとき、シリアライズ・デシリアライズに失敗する問題を修正
+
 ## v0.1.2
 
 * Bug Fixes

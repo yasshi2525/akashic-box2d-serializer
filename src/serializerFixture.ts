@@ -25,7 +25,10 @@ export interface FixtureParam {
     friction: number;
     isSensor: boolean;
     restitution: number;
-    shape: ObjectDef<ShapeParam>;
+    /**
+     * m_freeList の場合、shape が null
+     */
+    shape?: ObjectDef<ShapeParam>;
     userData: any;
 }
 
@@ -73,7 +76,7 @@ export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2F
                 friction: object.GetFriction(),
                 isSensor: object.IsSensor(),
                 restitution: object.GetRestitution(),
-                shape: this._shapeSerializer.serialize(object.GetShape()),
+                shape: object.GetShape() ? this._shapeSerializer.serialize(object.GetShape()) : undefined,
                 userData: object.GetUserData(),
             },
         };
@@ -86,7 +89,9 @@ export class FixtureSerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2F
         fixture.friction = json.param.friction;
         fixture.isSensor = json.param.isSensor;
         fixture.restitution = json.param.restitution;
-        fixture.shape = this._shapeSerializer.deserialize(json.param.shape);
+        if (json.param.shape) {
+            fixture.shape = this._shapeSerializer.deserialize(json.param.shape);
+        }
         fixture.userData = json.param.userData;
         return fixture;
     }
