@@ -75,6 +75,15 @@ export = (param: g.GameMainParameterObject): void => {
                     box2d.createFixtureDef({ shape: box2d.createCircleShape(10) })
                 );
             }
+            if (g.game.vars.tick % 20000 === 2) {
+                if (box2d.bodies.length > 0) {
+                    const rand = g.game.random.generate();
+                    const del = box2d.bodies[Math.floor(rand * box2d.bodies.length)];
+                    box2d.removeBody(del);
+                    del.entity.destroy();
+                    console.log(g.game.selfId, "destroy", del.entity.id);
+                }
+            }
             g.game.vars.tick++;
             box2d.step(1000 / g.game.fps);
         });

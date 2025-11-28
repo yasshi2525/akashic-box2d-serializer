@@ -6,7 +6,7 @@ import { FixtureSerializer } from "./serializerFixture";
 import { SweepParam, SweepSerializer } from "./serializerSweep";
 import { Vec2Param, Vec2Serializer } from "./serializerVec2";
 import { TransformParam, TransformSerializer } from "./serializerTransform";
-import { ObjectMapper } from "./objectMapper";
+import { ObjectMapper, RefParam } from "./objectMapper";
 
 /**
  * {@link EBody} オブジェクト型の識別子。
@@ -102,7 +102,7 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
             throw new Error(`Failed to create EBody. Please check entity (id = ${entity.id}, class name = ${entity.constructor.name}) is not registered to current scene.`);
         }
         this._deserializeBody(ebody.b2Body, json.param.b2body);
-        this._referFixture(ebody.b2Body.GetFixtureList());
+        this._referFixture(json.param.b2body.def.param.fixtureList, ebody.b2Body.GetFixtureList());
         return ebody;
     }
 
@@ -113,9 +113,13 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
         b2body.m_xf.Set(this._transformSerializer.deserialize(json.m_xf));
     }
 
-    _referFixture(fixtureList: Box2DWeb.Dynamics.b2Fixture) {
-        for (let f = fixtureList; f; f = f.GetNext()) {
-            this._fixtureMapper.refer(f);
+    _referFixture(defList: ObjectDef<RefParam>[], fixtureList: Box2DWeb.Dynamics.b2Fixture) {
+        let i = 0;
+        let f = fixtureList;
+        while (f) {
+            this._fixtureMapper.referStrict(defList[defList.length - 1 - i].param.id, f);
+            f = f.GetNext();
+            i++;
         }
     }
 
