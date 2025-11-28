@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v0.1.5
+
+* Bug Fixes
+  * `g` 系の名前がニコ生クライアントのみで minify されるため、名前のマッチングできない問題を修正
+
 ## v0.1.4
 
 * Bug Fixes

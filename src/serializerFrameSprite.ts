@@ -4,7 +4,7 @@ import { SpriteParam, SpriteSerializer, SpriteSerializerParameterObject } from "
 /**
  * g.FrameSprite オブジェクト型の識別子
  */
-export const frameSpriteType = g.FrameSprite.name;
+export const frameSpriteType = "FrameSprite";
 
 /**
  * g.FrameSprite オブジェクトを復元可能な形式で直列化したJSONです。

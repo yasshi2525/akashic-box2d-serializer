@@ -4,7 +4,7 @@ import { ObjectDef, ObjectSerializer } from "./serializerObject";
 /**
  * g.E オブジェクト型の識別子
  */
-export const entityType = g.E.name;
+export const entityType = "E";
 
 /**
  * 直列化したときの parent の値の型

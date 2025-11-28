@@ -4,7 +4,7 @@ import { ObjectDef, ObjectSerializer } from "./serializerObject";
 /**
  * g.FilledRect オブジェクト型の識別子
  */
-export const filledRectType = g.FilledRect.name;
+export const filledRectType = "FilledRect";
 
 /**
  * g.FilledRect オブジェクトを復元可能な形式で直列化したJSONです。
