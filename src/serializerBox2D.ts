@@ -23,6 +23,7 @@ import { dynamicTreeNodeRefType, DynamicTreeNodeSerializer } from "./serializerT
 import { AABBSerializer } from "./serializerAABB";
 import { DynamicTreeParam, DynamicTreeSerializer } from "./serializerTreeDynamic";
 import { ObjectMapper } from "./objectMapper";
+import { toFixture } from "./converterFixture";
 
 /**
  * Box2D の EBody を復元可能な形式で直列化したJSONです。
@@ -35,6 +36,7 @@ export interface Box2DBodiesParam {
             tree: ObjectDef<DynamicTreeParam>;
         };
     };
+    ebodyCount: number;
 }
 
 export interface Box2DSerializerParameterObject {
@@ -220,7 +222,7 @@ export class Box2DSerializer {
         const bodies = this._box2d.bodies.map(ebody => this._eBodySerializer.serialize(ebody));
         const tree = this._dynamicTreeSerializer.serialize(this._box2d.world.m_contactManager.m_broadPhase.m_tree);
         const fixtures = this._fixtureMapper.objects().map(f => this._fixtureSerializer.serialize(f));
-        const result = {
+        const result: Box2DBodiesParam = {
             bodies,
             fixtures,
             contactManager: {
@@ -228,6 +230,7 @@ export class Box2DSerializer {
                     tree,
                 },
             },
+            ebodyCount: (this._box2d as any)._createBodyCount,
         };
         this._cleanup();
         return result;
@@ -240,11 +243,19 @@ export class Box2DSerializer {
      * @returns 復元された {@link EBody}
      */
     desrializeBodies(json: Box2DBodiesParam): EBody[] {
-        for (const f of json.fixtures.map(param => this._fixtureSerializer.deserialize(param))) {
-            this._fixtureDefMapper.refer(f);
+        for (const def of json.fixtures) {
+            const f = this._fixtureSerializer.deserialize(def);
+            this._fixtureDefMapper.referStrict(def.param.self.param.id, f);
         }
         const bodies = json.bodies.map(obj => this._eBodySerializer.deserialize(obj));
+        // m_tree.m_freeList.userData に入っているような fixture は b2body から削除されているため上記では _fixtureMapper に登録されない
+        for (const [id, def] of this._fixtureDefMapper._refToObject.entries()) {
+            if (!this._fixtureMapper._refToObject.get(id)) {
+                this._fixtureMapper.referStrict(id, toFixture(def));
+            }
+        }
         this._box2d.world.m_contactManager.m_broadPhase.m_tree = this._dynamicTreeSerializer.deserialize(json.contactManager.broadPhase.tree);
+        (this._box2d as any)._createBodyCount = json.ebodyCount;
         this._cleanup();
         return bodies;
     }

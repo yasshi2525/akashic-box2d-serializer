@@ -1,6 +1,6 @@
 import { BodyType, Box2D, Box2DParameter, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { Box2DSerializer } from "../../src/serializerBox2D";
-import { toExpectedEntity } from "./utils";
+import { expectToShallowEqualFixture, toExpectedEntity } from "./utils";
 
 describe("Box2DSerializer", () => {
     let serializer: Box2DSerializer;
@@ -22,7 +22,7 @@ describe("Box2DSerializer", () => {
     let fontBefore: g.Font;
     let fontAfter: g.Font;
     let bodyDef: Box2DWeb.Dynamics.b2BodyDef;
-    let fixtureDef: Box2DWeb.Dynamics.b2FixtureDef;
+    let fixtureDefs: Box2DWeb.Dynamics.b2FixtureDef[];
 
     beforeEach(() => {
         const box2dParam: Box2DParameter = {
@@ -32,7 +32,10 @@ describe("Box2DSerializer", () => {
         box2d = new Box2D(box2dParam);
         targetBox2D = new Box2D(box2dParam);
         bodyDef = box2d.createBodyDef({ type: BodyType.Kinematic });
-        fixtureDef = box2d.createFixtureDef({ shape: box2d.createCircleShape(10) });
+        fixtureDefs = [
+            box2d.createFixtureDef({ shape: box2d.createCircleShape(10), userData: "1.circle" }),
+            box2d.createFixtureDef({ shape: box2d.createRectShape(20, 30), userData: "2.rect" }),
+        ];
         spriteImageBefore = client.createDummyImageAsset({
             width: 100,
             height: 100,
@@ -105,19 +108,6 @@ describe("Box2DSerializer", () => {
         });
     });
 
-    const expectToShallowEqualFixture = (received: Box2DWeb.Dynamics.b2Fixture, expected: Box2DWeb.Dynamics.b2Fixture) => {
-        expect(received.GetAABB()).toEqual(expected.GetAABB());
-        expect(received.GetDensity()).toBe(expected.GetDensity());
-        expect(received.GetFilterData()).toEqual(expected.GetFilterData());
-        expect(received.GetFriction()).toBe(expected.GetFriction());
-        expect(received.GetMassData()).toEqual(expected.GetMassData());
-        expect(received.GetRestitution()).toBe(expected.GetRestitution());
-        expect(received.GetShape()).toEqual(expected.GetShape());
-        expect(received.GetType()).toEqual(expected.GetType());
-        expect(received.GetUserData()).toEqual(expected.GetUserData());
-        expect(received.IsSensor()).toBe(expected.IsSensor());
-    };
-
     const expectToEqualsNode = (received: Box2DWeb.Collision.b2DynamicTreeNode, expected: Box2DWeb.Collision.b2DynamicTreeNode) => {
         expect(received.aabb).toEqual(expected.aabb);
         if (expected.userData) {
@@ -158,10 +148,10 @@ describe("Box2DSerializer", () => {
             scene,
             parent: scene,
         });
-        box2d.createBody(entity, bodyDef, fixtureDef);
+        box2d.createBody(entity, bodyDef, fixtureDefs);
         const json = serializer.serializeBodies();
         expect(json.bodies).toHaveLength(1);
-        expect(json.fixtures).toHaveLength(1);
+        expect(json.fixtures).toHaveLength(2);
         expect(serializer._fixtureMapper.objects()).toHaveLength(0); // check cache is cleared.
         expect(serializer._fixtureDefMapper.objects()).toHaveLength(0); // check cache is cleared.
         expect(json.contactManager.broadPhase.tree).toBeDefined();
@@ -173,7 +163,7 @@ describe("Box2DSerializer", () => {
             scene,
             parent: scene,
         });
-        box2d.createBody(entity, bodyDef, fixtureDef);
+        box2d.createBody(entity, bodyDef, fixtureDefs);
         const json = serializer.serializeBodies();
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
@@ -195,7 +185,7 @@ describe("Box2DSerializer", () => {
             height: 100,
             cssColor: "blue",
         });
-        box2d.createBody(rect, bodyDef, fixtureDef);
+        box2d.createBody(rect, bodyDef, fixtureDefs);
         const json = serializer.serializeBodies();
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
@@ -208,7 +198,7 @@ describe("Box2DSerializer", () => {
             parent: scene,
             src: spriteSurfaceBefore,
         });
-        box2d.createBody(sprite, bodyDef, fixtureDef);
+        box2d.createBody(sprite, bodyDef, fixtureDefs);
         const json = serializer.serializeBodies();
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
@@ -223,7 +213,7 @@ describe("Box2DSerializer", () => {
             width: 100,
             height: 100,
         });
-        box2d.createBody(frameSprite, bodyDef, fixtureDef);
+        box2d.createBody(frameSprite, bodyDef, fixtureDefs);
         const json = serializer.serializeBodies();
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
@@ -238,7 +228,7 @@ describe("Box2DSerializer", () => {
             width: 100,
             height: 100,
         });
-        box2d.createBody(pane, bodyDef, fixtureDef);
+        box2d.createBody(pane, bodyDef, fixtureDefs);
         const json = serializer.serializeBodies();
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
@@ -252,7 +242,7 @@ describe("Box2DSerializer", () => {
             font: fontBefore,
             text: "dummy",
         });
-        box2d.createBody(label, bodyDef, fixtureDef);
+        box2d.createBody(label, bodyDef, fixtureDefs);
         const json = serializer.serializeBodies();
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
@@ -274,7 +264,7 @@ describe("Box2DSerializer", () => {
             parent: scene,
             input1: "dummy",
         });
-        box2d.createBody(simpleE, bodyDef, fixtureDef);
+        box2d.createBody(simpleE, bodyDef, fixtureDefs);
         serializer.addDerivedEntitySerializer(SimpleE, obj => ({ input1: obj.input1 }));
         deserializer.addDerivedEntitySerializer(SimpleE, obj => ({ input1: obj.input1 }));
         const json = serializer.serializeBodies();
@@ -295,7 +285,7 @@ describe("Box2DSerializer", () => {
             scene,
             parent: scene,
         }, "dummy");
-        box2d.createBody(simpleE, bodyDef, fixtureDef);
+        box2d.createBody(simpleE, bodyDef, fixtureDefs);
         serializer.addDerivedEntitySerializer(SimpleE, obj => ({ input1: obj.input1 }), json => new SimpleE(json, json.input1));
         deserializer.addDerivedEntitySerializer(SimpleE, obj => ({ input1: obj.input1 }), json => new SimpleE(json, json.input1));
         const json = serializer.serializeBodies();
@@ -320,7 +310,7 @@ describe("Box2DSerializer", () => {
             height: 100,
             input1: "dummy",
         });
-        box2d.createBody(simpleRect, bodyDef, fixtureDef);
+        box2d.createBody(simpleRect, bodyDef, fixtureDefs);
         serializer.addDerivedFilledRectSerializer(SimpleFilledRect, obj => ({ input1: obj.input1 }));
         deserializer.addDerivedFilledRectSerializer(SimpleFilledRect, obj => ({ input1: obj.input1 }));
         const json = serializer.serializeBodies();
@@ -344,7 +334,7 @@ describe("Box2DSerializer", () => {
             width: 100,
             height: 100,
         }, "dummy");
-        box2d.createBody(simpleRect, bodyDef, fixtureDef);
+        box2d.createBody(simpleRect, bodyDef, fixtureDefs);
         serializer.addDerivedFilledRectSerializer(SimpleFilledRect, obj => ({ input1: obj.input1 }), json => new SimpleFilledRect(json, json.input1));
         deserializer.addDerivedFilledRectSerializer(SimpleFilledRect, obj => ({ input1: obj.input1 }), json => new SimpleFilledRect(json, json.input1));
         const json = serializer.serializeBodies();
@@ -367,7 +357,7 @@ describe("Box2DSerializer", () => {
             src: spriteImageBefore,
             input1: "dummy",
         });
-        box2d.createBody(simpleSprite, bodyDef, fixtureDef);
+        box2d.createBody(simpleSprite, bodyDef, fixtureDefs);
         serializer.addDerivedSpriteSerializer(SimpleSprite, obj => ({ input1: obj.input1 }));
         deserializer.addDerivedSpriteSerializer(SimpleSprite, obj => ({ input1: obj.input1 }));
         const json = serializer.serializeBodies();
@@ -389,7 +379,7 @@ describe("Box2DSerializer", () => {
             parent: scene,
             src: spriteImageBefore,
         }, "dummy");
-        box2d.createBody(simpleSprite, bodyDef, fixtureDef);
+        box2d.createBody(simpleSprite, bodyDef, fixtureDefs);
         serializer.addDerivedSpriteSerializer(SimpleSprite, obj => ({ input1: obj.input1 }), undefined, json => new SimpleSprite(json, json.input1));
         deserializer.addDerivedSpriteSerializer(SimpleSprite, obj => ({ input1: obj.input1 }), undefined, json => new SimpleSprite(json, json.input1));
         const json = serializer.serializeBodies();
@@ -412,7 +402,7 @@ describe("Box2DSerializer", () => {
             src: spriteSurfaceBefore,
             input1: "dummy",
         });
-        box2d.createBody(simpleSprite, bodyDef, fixtureDef);
+        box2d.createBody(simpleSprite, bodyDef, fixtureDefs);
         serializer.addDerivedSpriteSerializer(SimpleSprite, obj => ({ input1: obj.input1 }));
         deserializer.addDerivedSpriteSerializer(SimpleSprite, obj => ({ input1: obj.input1 }), () => spriteSurfaceAfter);
         const json = serializer.serializeBodies();
@@ -434,7 +424,7 @@ describe("Box2DSerializer", () => {
             parent: scene,
             src: spriteSurfaceBefore,
         }, "dummy");
-        box2d.createBody(simpleSprite, bodyDef, fixtureDef);
+        box2d.createBody(simpleSprite, bodyDef, fixtureDefs);
         serializer.addDerivedSpriteSerializer(SimpleSprite, obj => ({ input1: obj.input1 }), () => spriteSurfaceBefore, json => new SimpleSprite(json, json.input1));
         deserializer.addDerivedSpriteSerializer(SimpleSprite, obj => ({ input1: obj.input1 }), () => spriteSurfaceBefore, json => new SimpleSprite(json, json.input1));
         const json = serializer.serializeBodies();
@@ -459,7 +449,7 @@ describe("Box2DSerializer", () => {
             height: 100,
             input1: "dummy",
         });
-        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDef);
+        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDefs);
         serializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }));
         deserializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }));
 
@@ -484,7 +474,7 @@ describe("Box2DSerializer", () => {
             height: 100,
             src: frameSpriteImageBefore,
         }, "dummy");
-        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDef);
+        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDefs);
         serializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }), undefined, json => new SimpleFrameSprite(json, json.input1));
         deserializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }), undefined, json => new SimpleFrameSprite(json, json.input1));
         const json = serializer.serializeBodies();
@@ -509,7 +499,7 @@ describe("Box2DSerializer", () => {
             height: 100,
             input1: "dummy",
         });
-        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDef);
+        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDefs);
         serializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }), () => frameSpriteSurfaceAfter);
         deserializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }), () => frameSpriteSurfaceAfter);
         const json = serializer.serializeBodies();
@@ -536,7 +526,7 @@ describe("Box2DSerializer", () => {
             width: 100,
             height: 100,
         }, "dummy");
-        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDef);
+        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDefs);
         serializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }), () => frameSpriteSurfaceAfter, json => new SimpleFrameSprite(json, json.input1));
         deserializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }), () => frameSpriteSurfaceAfter, json => new SimpleFrameSprite(json, json.input1));
         const json = serializer.serializeBodies();
@@ -562,7 +552,7 @@ describe("Box2DSerializer", () => {
             text: "dummyText",
             input1: "dummy",
         });
-        box2d.createBody(simpleLabel, bodyDef, fixtureDef);
+        box2d.createBody(simpleLabel, bodyDef, fixtureDefs);
         serializer.addDerivedLabelSerializer(SimpleLabel, obj => ({ input1: obj.input1 }), () => fontAfter);
         deserializer.addDerivedLabelSerializer(SimpleLabel, obj => ({ input1: obj.input1 }), () => fontAfter);
         const json = serializer.serializeBodies();
@@ -587,7 +577,7 @@ describe("Box2DSerializer", () => {
             font: fontBefore,
             text: "dummyText",
         }, "dummy");
-        box2d.createBody(simpleLabel, bodyDef, fixtureDef);
+        box2d.createBody(simpleLabel, bodyDef, fixtureDefs);
         serializer.addDerivedLabelSerializer(SimpleLabel, obj => ({ input1: obj.input1 }), () => fontAfter, json => new SimpleLabel(json, json.input1));
         deserializer.addDerivedLabelSerializer(SimpleLabel, obj => ({ input1: obj.input1 }), () => fontAfter, json => new SimpleLabel(json, json.input1));
         const json = serializer.serializeBodies();
@@ -613,7 +603,7 @@ describe("Box2DSerializer", () => {
             height: 100,
             input1: "dummy",
         });
-        box2d.createBody(simplePane, bodyDef, fixtureDef);
+        box2d.createBody(simplePane, bodyDef, fixtureDefs);
         serializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }));
         deserializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }));
         const json = serializer.serializeBodies();
@@ -636,7 +626,7 @@ describe("Box2DSerializer", () => {
             width: 100,
             height: 100,
         }, "dummy");
-        box2d.createBody(simplePane, bodyDef, fixtureDef);
+        box2d.createBody(simplePane, bodyDef, fixtureDefs);
         serializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }), undefined, json => new SimplePane(json, json.input1));
         deserializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }), undefined, json => new SimplePane(json, json.input1));
         const json = serializer.serializeBodies();
@@ -661,7 +651,7 @@ describe("Box2DSerializer", () => {
             height: 100,
             input1: "dummy",
         });
-        box2d.createBody(simplePane, bodyDef, fixtureDef);
+        box2d.createBody(simplePane, bodyDef, fixtureDefs);
         serializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }));
         deserializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }));
         const json = serializer.serializeBodies();
@@ -685,7 +675,7 @@ describe("Box2DSerializer", () => {
             width: 100,
             height: 100,
         }, "dummy");
-        box2d.createBody(simplePane, bodyDef, fixtureDef);
+        box2d.createBody(simplePane, bodyDef, fixtureDefs);
         serializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }), undefined, json => new SimplePane(json, json.input1));
         deserializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }), undefined, json => new SimplePane(json, json.input1));
         const json = serializer.serializeBodies();
@@ -710,7 +700,7 @@ describe("Box2DSerializer", () => {
             height: 100,
             input1: "dummy",
         });
-        box2d.createBody(simplePane, bodyDef, fixtureDef);
+        box2d.createBody(simplePane, bodyDef, fixtureDefs);
         serializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }), () => paneSurfaceAfter);
         deserializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }), () => paneSurfaceAfter);
         const json = serializer.serializeBodies();
@@ -734,12 +724,22 @@ describe("Box2DSerializer", () => {
             width: 100,
             height: 100,
         }, "dummy");
-        box2d.createBody(simplePane, bodyDef, fixtureDef);
+        box2d.createBody(simplePane, bodyDef, fixtureDefs);
         serializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }), () => paneSurfaceAfter, json => new SimplePane(json, json.input1));
         deserializer.addDerivedPaneSerializer(SimplePane, obj => ({ input1: obj.input1 }), () => paneSurfaceAfter, json => new SimplePane(json, json.input1));
         const json = serializer.serializeBodies();
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
         expect(ebody[0].entity).toEqual(toExpectedEntity(simplePane, ebody[0].entity));
+    });
+
+    it("can deserialze after removing body from world", () => {
+        const ebody = box2d.createBody(new g.E({ scene, parent: scene }), bodyDef, fixtureDefs)!;
+        box2d.removeBody(ebody);
+        expect(box2d.world.m_contactManager.m_broadPhase.m_tree.m_freeList).toBeTruthy();
+        expect(box2d.bodies).toHaveLength(0);
+        const json = serializer.serializeBodies();
+        const object = deserializer.desrializeBodies(json);
+        expect(object).toHaveLength(0);
     });
 });

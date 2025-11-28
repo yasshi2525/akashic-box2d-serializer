@@ -41,7 +41,7 @@ describe("e2e", () => {
     it("restore by snapshot (litte after snapshot)", async () => {
         await context.advance(15000);
         expect(activeInstance.game.vars.requestSnapshotCount).toBeGreaterThan(0);
-        const passiveInstance = await context.createPassiveGameClient();
+        const passiveInstance = await context.createPassiveGameClient({ player: { id: "pid1", name: "player-1" } });
         await passiveInstance.advanceUntil(() => passiveInstance.game.scene()?.name === "main");
         expect(activeInstance.game.isSkipping).toBe(false);
         expect(passiveInstance.game.isSkipping).toBe(false);
