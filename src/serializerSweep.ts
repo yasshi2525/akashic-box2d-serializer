@@ -46,8 +46,7 @@ export class SweepSerializer implements ObjectSerializer<Box2DWeb.Common.Math.b2
                 c: this._vec2Serializer.serialize(object.c),
                 c0: this._vec2Serializer.serialize(object.c0),
                 localCenter: this._vec2Serializer.serialize(object.localCenter),
-                // TODO: https://github.com/akashic-games/akashic-box2d/issues/97
-                t0: object.t0 as unknown as number,
+                t0: object.t0,
             },
         };
     }
@@ -59,8 +58,7 @@ export class SweepSerializer implements ObjectSerializer<Box2DWeb.Common.Math.b2
         sweep.c = this._vec2Serializer.deserialize(json.param.c);
         sweep.c0 = this._vec2Serializer.deserialize(json.param.c0);
         sweep.localCenter = this._vec2Serializer.deserialize(json.param.localCenter);
-        // TODO: https://github.com/akashic-games/akashic-box2d/issues/97
-        (sweep.t0 as unknown as number) = json.param.t0;
+        sweep.t0 = json.param.t0;
         return sweep;
     }
 }

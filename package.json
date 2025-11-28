@@ -22,7 +22,8 @@
   },
   "files": [
     "lib",
-    "typings"
+    "typings",
+    "CHANGELOG.md"
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -36,7 +37,7 @@
     "clean": "rimraf lib"
   },
   "dependencies": {
-    "@akashic-extension/akashic-box2d": "^3.1.2",
+    "@akashic-extension/akashic-box2d": "^3.1.3",
     "@akashic/akashic-engine": "^3.21.0"
   },
   "devDependencies": {
