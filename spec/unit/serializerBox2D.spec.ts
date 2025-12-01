@@ -733,7 +733,7 @@ describe("Box2DSerializer", () => {
         expect(ebody[0].entity).toEqual(toExpectedEntity(simplePane, ebody[0].entity));
     });
 
-    it("can deserialze after removing body from world", () => {
+    it("can deserialize after removing body from world", () => {
         const ebody = box2d.createBody(new g.E({ scene, parent: scene }), bodyDef, fixtureDefs)!;
         box2d.removeBody(ebody);
         expect(box2d.world.m_contactManager.m_broadPhase.m_tree.m_freeList).toBeTruthy();
