@@ -2,7 +2,7 @@ import { Box2D, Box2DWeb, EBody, BodyType, Box2DParameter } from "@akashic-exten
 import { EBodySerializer, ebodyType } from "../../src/serializerEbody";
 import { createDefaultEntityParam, extractSerializedEntityParam, expectToShallowEqualBody, toExpectedEntity } from "./utils";
 import { EntitySerializer } from "../../src/serializerEntity";
-import { BodySerializer } from "../../src/serializerBody";
+import { bodyRefType, BodySerializer } from "../../src/serializerBody";
 import { fixtureRefType, FixtureSerializer } from "../../src/serializerFixture";
 import { FilterDataSerializer } from "../../src/serializerFilterData";
 import { ShapeSerializer } from "../../src/serializerShape";
@@ -27,6 +27,7 @@ describe("EBodySerializer", () => {
     let fixtureSerializer: FixtureSerializer;
     let fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
     let fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
+    let bodyMapper: ObjectMapper<Box2DWeb.Dynamics.b2Body>;
     let ebody: EBody;
     let entityParam: g.EParameterObject;
     let bodyDef: Box2DWeb.Dynamics.b2BodyDef;
@@ -52,6 +53,9 @@ describe("EBodySerializer", () => {
         fixtureDefMapper = new ObjectMapper({
             refTypeName: fixtureRefType,
         });
+        bodyMapper = new ObjectMapper({
+            refTypeName: bodyRefType,
+        });
         vec2Serializer = new Vec2Serializer();
         fixtureSerializer = new FixtureSerializer({
             filterDataSerializer: new FilterDataSerializer(),
@@ -66,6 +70,7 @@ describe("EBodySerializer", () => {
         bodySerializer = new BodySerializer({
             vec2Serializer,
             fixtureMapper,
+            selfMapper: bodyMapper,
         });
         sweepSerializer = new SweepSerializer({
             vec2Serializer,
@@ -86,6 +91,7 @@ describe("EBodySerializer", () => {
             transformSerializer,
             fixtureMapper,
             fixtureDefMapper,
+            bodyMapper,
         });
         entityParam = {
             ...createDefaultEntityParam(),

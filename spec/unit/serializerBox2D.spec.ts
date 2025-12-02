@@ -1,6 +1,6 @@
 import { BodyType, Box2D, Box2DParameter, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { Box2DSerializer } from "../../src/serializerBox2D";
-import { expectToShallowEqualFixture, toExpectedEntity } from "./utils";
+import { expectToShallowEqualBody, expectToShallowEqualFixture, toExpectedEntity } from "./utils";
 
 describe("Box2DSerializer", () => {
     let serializer: Box2DSerializer;
@@ -733,7 +733,7 @@ describe("Box2DSerializer", () => {
         expect(ebody[0].entity).toEqual(toExpectedEntity(simplePane, ebody[0].entity));
     });
 
-    it("can deserialze after removing body from world", () => {
+    it("can deserialize after removing body from world", () => {
         const ebody = box2d.createBody(new g.E({ scene, parent: scene }), bodyDef, fixtureDefs)!;
         box2d.removeBody(ebody);
         expect(box2d.world.m_contactManager.m_broadPhase.m_tree.m_freeList).toBeTruthy();
@@ -741,5 +741,34 @@ describe("Box2DSerializer", () => {
         const json = serializer.serializeBodies();
         const object = deserializer.desrializeBodies(json);
         expect(object).toHaveLength(0);
+    });
+
+    it("can deserialize after contact", () => {
+        const fallen = box2d.createBody(
+            new g.E({ scene, parent: scene, y: 100 }),
+            box2d.createBodyDef({ type: BodyType.Dynamic }),
+            box2d.createFixtureDef({ density: 1, shape: box2d.createCircleShape(10) })
+        );
+        const grand = box2d.createBody(
+            new g.E({ scene, parent: scene, y: 900 }),
+            box2d.createBodyDef({ type: BodyType.Dynamic }),
+            box2d.createFixtureDef({ density: 1, shape: box2d.createRectShape(100, 50) })
+        );
+        fallen?.b2Body.ApplyForce(box2d.vec2(0, 110), fallen.b2Body.GetWorldCenter());
+        grand?.b2Body.ApplyForce(box2d.vec2(0, 110), grand.b2Body.GetWorldCenter());
+        expect(box2d.world.m_contactCount).toBe(0);
+        expect(box2d.world.m_contactList).toBeFalsy();
+        while (box2d.world.m_contactCount === 0) {
+            box2d.step(1);
+        }
+        expect(box2d.world.m_contactCount).toBeGreaterThan(0);
+        expect(box2d.world.m_contactList).toBeDefined();
+        const json = serializer.serializeBodies();
+        const object = deserializer.desrializeBodies(json);
+        expect(object).toHaveLength(2);
+        box2d.step(10);
+        targetBox2D.step(10);
+        expectToShallowEqualBody(object[0].b2Body, fallen!.b2Body);
+        expectToShallowEqualBody(object[1].b2Body, grand!.b2Body);
     });
 });

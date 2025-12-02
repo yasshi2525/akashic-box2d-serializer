@@ -38,6 +38,7 @@ export interface EBodySerializerParameterObject {
     transformSerializer: TransformSerializer;
     fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
     fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
+    bodyMapper: ObjectMapper<Box2DWeb.Dynamics.b2Body>;
 }
 
 /**
@@ -53,6 +54,7 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
     readonly _entitySerializers: EntitySerializer[];
     readonly _fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
     readonly _fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
+    readonly _bodyMapper: ObjectMapper<Box2DWeb.Dynamics.b2Body>;
 
     constructor(param: EBodySerializerParameterObject) {
         this._box2d = param.box2d;
@@ -64,6 +66,7 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
         this._entitySerializers = param.entitySerializers;
         this._fixtureMapper = param.fixtureMapper;
         this._fixtureDefMapper = param.fixtureDefMapper;
+        this._bodyMapper = param.bodyMapper;
     }
 
     filter(objectType: string): boolean {
@@ -104,6 +107,7 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
         ebody.id = json.param.id;
         this._deserializeBody(ebody.b2Body, json.param.b2body);
         this._referFixture(json.param.b2body.def.param.fixtureList, ebody.b2Body.GetFixtureList());
+        this._referBody(json.param.b2body.def.param.self, ebody.b2Body);
         return ebody;
     }
 
@@ -122,6 +126,10 @@ export class EBodySerializer implements ObjectSerializer<EBody, EBodyParam> {
             f = f.GetNext();
             i++;
         }
+    }
+
+    _referBody(def: ObjectDef<RefParam>, b2Body: EBody["b2Body"]) {
+        this._bodyMapper.referStrict(def.param.id, b2Body);
     }
 
     _findEntitySerializer(objectType: string): EntitySerializer {

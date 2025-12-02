@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v0.1.6
+
+* Bug Fixes
+  * `b2Contact` 情報がシリアライズされないため、復元後の計算結果が異なる問題を修正
+
 ## v0.1.5
 
 * Bug Fixes

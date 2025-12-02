@@ -15,6 +15,11 @@ export const bodyType = Box2DWeb.Dynamics.b2Body.name;
  * fixtureList は復元時に対応するオブジェクトにマッピングします。
  */
 export interface BodyParam {
+    /**
+     * B2Body自体には識別子は存在しませんが、
+     * B2ContactEdge から参照されるため、参照解決のために付与します。
+     */
+    self: ObjectDef<RefParam>;
     active: boolean;
     allowSleep: boolean;
     angularDamping: number;
@@ -33,7 +38,13 @@ export interface BodyParam {
 export interface BodySerializerParameterObject {
     vec2Serializer: Vec2Serializer;
     fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
+    selfMapper: ObjectMapper<Box2DWeb.Dynamics.b2Body>;
 }
+
+/**
+ * B2Body オブジェクトの識別情報（参照解決用）の識別子。
+ */
+export const bodyRefType = Box2DWeb.Dynamics.b2Body.name + "Ref";
 
 /**
  * B2Bodyオブジェクトを直列化し、B2BodyDefオブジェクトに復元します。
@@ -42,10 +53,12 @@ export interface BodySerializerParameterObject {
 export class BodySerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Body, BodyParam, Box2DWeb.Dynamics.b2BodyDef> {
     readonly _vec2Serializer: Vec2Serializer;
     readonly _fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
+    readonly _selfMapper: ObjectMapper<Box2DWeb.Dynamics.b2Body>;
 
     constructor(param: BodySerializerParameterObject) {
         this._vec2Serializer = param.vec2Serializer;
         this._fixtureMapper = param.fixtureMapper;
+        this._selfMapper = param.selfMapper;
     }
 
     filter(objectType: string): boolean {
@@ -66,6 +79,7 @@ export class BodySerializer implements ObjectSerializer<Box2DWeb.Dynamics.b2Body
         return {
             type: bodyType,
             param: {
+                self: this._selfMapper.refer(object),
                 active: object.IsActive(),
                 allowSleep: object.IsSleepingAllowed(),
                 angularDamping: object.GetAngularDamping(),
