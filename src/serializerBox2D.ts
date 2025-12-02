@@ -5,7 +5,7 @@ import { CircleShapeSerializer } from "./serializerShapeCircle";
 import { PolygonShapeSerializer } from "./serializerShapePolygon";
 import { ShapeSerializer } from "./serializerShape";
 import { FixtureParam, fixtureRefType, FixtureSerializer } from "./serializerFixture";
-import { BodySerializer } from "./serializerBody";
+import { bodyRefType, BodySerializer } from "./serializerBody";
 import { EntityParam, EntitySerializer } from "./serializerEntity";
 import { FilledRectParam, FilledRectSerializer } from "./serializerFilledRect";
 import { ImageAssetSerializer } from "./serializerImageAsset";
@@ -24,6 +24,13 @@ import { AABBSerializer } from "./serializerAABB";
 import { DynamicTreeParam, DynamicTreeSerializer } from "./serializerTreeDynamic";
 import { ObjectMapper } from "./objectMapper";
 import { toFixture } from "./converterFixture";
+import { ContactParam, ContactSerializer } from "./serializerContact";
+import { ContactEdgeParam, contactEdgeRefType, ContactEdgeSerializer, contactEdgeType } from "./serializerContactEdge";
+import { ContactObjectMapper } from "./objectMapperContact";
+import { ManifoldPointSerializer } from "./serializerManifoldPoint";
+import { ManifoldSerializer } from "./serializerManifold";
+import { ContactIDSerializer } from "./serializerContactID";
+import { FeaturesSerializer } from "./serializerFeatures";
 
 /**
  * Box2D の EBody を復元可能な形式で直列化したJSONです。
@@ -35,6 +42,10 @@ export interface Box2DBodiesParam {
         broadPhase: {
             tree: ObjectDef<DynamicTreeParam>;
         };
+    };
+    contactList: {
+        contacts: ObjectDef<ContactParam>[];
+        contactEdges: ObjectDef<ContactEdgeParam>[];
     };
     ebodyCount: number;
 }
@@ -73,6 +84,9 @@ export class Box2DSerializer {
     readonly _fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
     readonly _fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
     readonly _dynamicTreeNodeMapper: ObjectMapper<Box2DWeb.Collision.b2DynamicTreeNode>;
+    readonly _bodyMapper: ObjectMapper<Box2DWeb.Dynamics.b2Body>;
+    readonly _contactMapper: ContactObjectMapper;
+    readonly _contactEdgeMapper: ObjectMapper<Box2DWeb.Dynamics.Contacts.b2ContactEdge>;
     readonly _circleShapeSerializer: CircleShapeSerializer;
     readonly _vec2serializer: Vec2Serializer;
     readonly _polygonShapeSerializer: PolygonShapeSerializer;
@@ -96,6 +110,12 @@ export class Box2DSerializer {
     readonly _mat22Serializer: Mat22Serializer;
     readonly _transformSerializer: TransformSerializer;
     readonly _eBodySerializer: EBodySerializer;
+    readonly _featuresSeriazlier: FeaturesSerializer;
+    readonly _contactIDSerializer: ContactIDSerializer;
+    readonly _manifoldPointSerializer: ManifoldPointSerializer;
+    readonly _manifoldSerializer: ManifoldSerializer;
+    readonly _contactEdgeSerializer: ContactEdgeSerializer;
+    readonly _contactSerializer: ContactSerializer;
 
     constructor(param: Box2DSerializerParameterObject) {
         this._scene = param.scene;
@@ -108,6 +128,13 @@ export class Box2DSerializer {
         });
         this._dynamicTreeNodeMapper = new ObjectMapper({
             refTypeName: dynamicTreeNodeRefType,
+        });
+        this._bodyMapper = new ObjectMapper({
+            refTypeName: bodyRefType,
+        });
+        this._contactMapper = new ContactObjectMapper();
+        this._contactEdgeMapper = new ObjectMapper({
+            refTypeName: contactEdgeRefType,
         });
         this._circleShapeSerializer = new CircleShapeSerializer();
         this._vec2serializer = new Vec2Serializer();
@@ -139,6 +166,7 @@ export class Box2DSerializer {
         this._bodySerializer = new BodySerializer({
             vec2Serializer: this._vec2serializer,
             fixtureMapper: this._fixtureMapper,
+            selfMapper: this._bodyMapper,
         });
         this._entitySerializers = [];
         this._plainMatrixSerializer = new PlainMatrixSerializer();
@@ -211,6 +239,30 @@ export class Box2DSerializer {
             entitySerializers: this._entitySerializers,
             fixtureMapper: this._fixtureMapper,
             fixtureDefMapper: this._fixtureDefMapper,
+            bodyMapper: this._bodyMapper,
+        });
+        this._featuresSeriazlier = new FeaturesSerializer();
+        this._contactIDSerializer = new ContactIDSerializer({
+            featuresSerializer: this._featuresSeriazlier,
+        });
+        this._manifoldPointSerializer = new ManifoldPointSerializer({
+            contactIDSerializer: this._contactIDSerializer,
+            vec2Serializer: this._vec2serializer,
+        });
+        this._manifoldSerializer = new ManifoldSerializer({
+            vec2serializer: this._vec2serializer,
+            manifoldPointSerializer: this._manifoldPointSerializer,
+        });
+        this._contactSerializer = new ContactSerializer({
+            manifoldSerialilzer: this._manifoldSerializer,
+            contactEdgeMapper: this._contactEdgeMapper,
+            fixtureMapper: this._fixtureMapper,
+            selfMapper: this._contactMapper,
+        });
+        this._contactEdgeSerializer = new ContactEdgeSerializer({
+            contactMapper: this._contactMapper,
+            selfMapper: this._contactEdgeMapper,
+            bodyMapper: this._bodyMapper,
         });
     }
 
@@ -222,6 +274,11 @@ export class Box2DSerializer {
         const bodies = this._box2d.bodies.map(ebody => this._eBodySerializer.serialize(ebody));
         const tree = this._dynamicTreeSerializer.serialize(this._box2d.world.m_contactManager.m_broadPhase.m_tree);
         const fixtures = this._fixtureMapper.objects().map(f => this._fixtureSerializer.serialize(f));
+        const contacts: ObjectDef<ContactParam>[] = [];
+        for (let c = this._box2d.world.GetContactList(); c; c = c.GetNext()) {
+            contacts.push(this._contactSerializer.serialize(c));
+        }
+        const contactEdges = this._contactEdgeMapper.objects().map(e => this._contactEdgeSerializer.serialize(e));
         const result: Box2DBodiesParam = {
             bodies,
             fixtures,
@@ -229,6 +286,10 @@ export class Box2DSerializer {
                 broadPhase: {
                     tree,
                 },
+            },
+            contactList: {
+                contacts,
+                contactEdges,
             },
             ebodyCount: (this._box2d as any)._createBodyCount,
         };
@@ -255,6 +316,35 @@ export class Box2DSerializer {
             }
         }
         this._box2d.world.m_contactManager.m_broadPhase.m_tree = this._dynamicTreeSerializer.deserialize(json.contactManager.broadPhase.tree);
+        for (const def of json.contactList.contactEdges) {
+            const e = this._contactEdgeSerializer.deserialize(def);
+            this._contactEdgeMapper.referStrict(def.param.self.param.id, e);
+        }
+        for (const def of json.contactList.contactEdges) {
+            const e = this._contactEdgeMapper.resolve(def.param.self);
+            if (def.param.next) {
+                e.next = this._contactEdgeMapper.resolve(def.param.next);
+            }
+            if (def.param.prev) {
+                e.prev = this._contactEdgeMapper.resolve(def.param.prev);
+            }
+        }
+        for (const def of json.contactList.contacts) {
+            const c = this._contactSerializer.deserialize(def);
+            c.m_nodeA.contact = c;
+            c.m_nodeB.contact = c;
+            this._contactMapper.referStrict(def.param.self.param.id, c);
+        }
+        for (const def of json.contactList.contacts) {
+            const e = this._contactMapper.resolve(def.param.self);
+            if (def.param.next) {
+                e.m_next = this._contactMapper.resolve(def.param.next);
+            }
+            if (def.param.prev) {
+                e.m_prev = this._contactMapper.resolve(def.param.prev);
+            }
+        }
+        this._box2d.world.m_contactCount = json.contactList.contacts.length;
         (this._box2d as any)._createBodyCount = json.ebodyCount;
         this._cleanup();
         return bodies;
@@ -609,5 +699,8 @@ export class Box2DSerializer {
         this._fixtureMapper.clear();
         this._fixtureDefMapper.clear();
         this._dynamicTreeNodeMapper.clear();
+        this._bodyMapper.clear();
+        this._contactMapper.clear();
+        this._contactEdgeMapper.clear();
     }
 }

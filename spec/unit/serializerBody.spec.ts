@@ -1,6 +1,6 @@
 import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { fixtureRefType } from "../../src/serializerFixture";
-import { BodySerializer, bodyType } from "../../src/serializerBody";
+import { bodyRefType, BodySerializer, bodyType } from "../../src/serializerBody";
 import { Vec2Serializer } from "../../src/serializerVec2";
 import { ObjectMapper, RefParam } from "../../src/objectMapper";
 import { ObjectDef } from "../../src/serializerObject";
@@ -10,6 +10,7 @@ describe("BodySerializer", () => {
     let vec2Serializer: Vec2Serializer;
     let serializer: BodySerializer;
     let fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
+    let selfMapper: ObjectMapper<Box2DWeb.Dynamics.b2Body>;
 
     beforeEach(() => {
         box2d = new Box2D({
@@ -19,10 +20,14 @@ describe("BodySerializer", () => {
         fixtureMapper = new ObjectMapper({
             refTypeName: fixtureRefType,
         });
+        selfMapper = new ObjectMapper({
+            refTypeName: bodyRefType,
+        });
         vec2Serializer = new Vec2Serializer();
         serializer = new BodySerializer({
             vec2Serializer,
             fixtureMapper,
+            selfMapper,
         });
     });
 
@@ -75,6 +80,7 @@ describe("BodySerializer", () => {
             ...defaultBodyDef,
             linearVelocity: vec2Serializer.serialize(defaultBodyDef.linearVelocity),
             fixtureList,
+            self: selfMapper.refer(defaultBody),
         };
         // 不必要パラメタを消去するためRequired parameter を optional parameter に変換
         const expected: Partial<typeof expectedRaw> = expectedRaw;
@@ -95,6 +101,7 @@ describe("BodySerializer", () => {
             ...customBodyDef,
             linearVelocity: vec2Serializer.serialize(customBodyDef.linearVelocity),
             fixtureList,
+            self: selfMapper.refer(customBody),
         };
         // 不必要パラメタを消去するためRequired parameter を optional parameter に変換
         const expected: Partial<typeof expectedRaw> = expectedRaw;

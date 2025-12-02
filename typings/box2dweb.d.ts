@@ -30,6 +30,16 @@ declare module "@akashic-extension/akashic-box2d" {
             class b2DynamicTreePair {
                 // TODO impl
             }
+            interface Features {
+                _m_id: b2ContactID;
+                _flip: number;
+                _incidentEdge: number;
+                _incidentVertex: number;
+                _referenceEdge: number;
+            }
+            interface b2ContactID {
+                _key?: number;
+            }
         }
         module Dynamics {
             module Contacts {
@@ -44,6 +54,29 @@ declare module "@akashic-extension/akashic-box2d" {
                     m_step: Dynamics.b2TimeStep;
                     m_constraints: b2ContactConstraint[];
                     // TODO declare methods
+                }
+                interface b2Contact {
+                    m_nodeA: b2ContactEdge;
+                    m_nodeB: b2ContactEdge;
+                    m_manifold: Collision.b2Manifold;
+                    m_oldManifold: Collision.b2Manifold;
+                    m_flags: number;
+                    m_fixtureA: b2Fixture;
+                    m_fixtureB: b2Fixture;
+                    m_prev?: b2Contact;
+                    m_next?: b2Contact;
+                }
+                class b2CircleContact extends b2Contact {
+                }
+                class b2EdgeAndCircleContact extends b2Contact {
+                }
+                class b2NullContact extends b2Contact {
+                }
+                class b2PolyAndCircleContact extends b2Contact {
+                }
+                class b2PolyAndEdgeContact extends b2Contact {
+                }
+                class b2PolygonContact extends b2Contact {
                 }
             }
 
