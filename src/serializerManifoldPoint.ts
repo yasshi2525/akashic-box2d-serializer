@@ -13,7 +13,7 @@ export const manifoldPointType = Box2DWeb.Collision.b2ManifoldPoint.name;
  */
 export interface ManifoldPointParam {
     m_id: ObjectDef<ContactIDParam>;
-    m_localpoint: ObjectDef<Vec2Param>;
+    m_localPoint: ObjectDef<Vec2Param>;
     m_normalImpulse: number;
     m_tangentImpulse: number;
 }
@@ -44,7 +44,7 @@ export class ManifoldPointSerializer implements ObjectSerializer<Box2DWeb.Collis
             type: manifoldPointType,
             param: {
                 m_id: this._contactIDSerializer.serialize(object.m_id),
-                m_localpoint: this._vec2Serializer.serialize(object.m_localPoint),
+                m_localPoint: this._vec2Serializer.serialize(object.m_localPoint),
                 m_normalImpulse: object.m_normalImpulse,
                 m_tangentImpulse: object.m_tangentImpulse,
             },
@@ -54,7 +54,7 @@ export class ManifoldPointSerializer implements ObjectSerializer<Box2DWeb.Collis
     deserialize(json: ObjectDef<ManifoldPointParam>): Box2DWeb.Collision.b2ManifoldPoint {
         const manifoldPoint = new Box2DWeb.Collision.b2ManifoldPoint();
         manifoldPoint.m_id = this._contactIDSerializer.deserialize(json.param.m_id);
-        manifoldPoint.m_localPoint = this._vec2Serializer.deserialize(json.param.m_localpoint);
+        manifoldPoint.m_localPoint = this._vec2Serializer.deserialize(json.param.m_localPoint);
         manifoldPoint.m_normalImpulse = json.param.m_normalImpulse;
         manifoldPoint.m_tangentImpulse = json.param.m_tangentImpulse;
         return manifoldPoint;

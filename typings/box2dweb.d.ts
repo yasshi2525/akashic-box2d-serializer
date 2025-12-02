@@ -30,6 +30,10 @@ declare module "@akashic-extension/akashic-box2d" {
             class b2DynamicTreePair {
                 // TODO impl
             }
+            interface b2ManifoldPoint {
+                // https://github.com/akashic-games/akashic-box2d/issues/102
+                m_localPoint: Common.Math.b2Vec2;
+            }
             interface Features {
                 _m_id: b2ContactID;
                 _flip: number;
