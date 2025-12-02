@@ -336,12 +336,12 @@ export class Box2DSerializer {
             this._contactMapper.referStrict(def.param.self.param.id, c);
         }
         for (const def of json.contactList.contacts) {
-            const e = this._contactMapper.resolve(def.param.self);
+            const c = this._contactMapper.resolve(def.param.self);
             if (def.param.next) {
-                e.m_next = this._contactMapper.resolve(def.param.next);
+                c.m_next = this._contactMapper.resolve(def.param.next);
             }
             if (def.param.prev) {
-                e.m_prev = this._contactMapper.resolve(def.param.prev);
+                c.m_prev = this._contactMapper.resolve(def.param.prev);
             }
         }
         this._box2d.world.m_contactCount = json.contactList.contacts.length;
