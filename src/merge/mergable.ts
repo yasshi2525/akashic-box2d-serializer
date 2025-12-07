@@ -21,7 +21,7 @@ export abstract class ResolvingBaseMerger<J, O, P extends ResolvingMergedPayload
         this.merge = new Proxy(this.merge, {
             apply: (target, thisArg, argArray: Parameters<ResolvingBaseMerger<J, O, P>["merge"]>) => {
                 this._validate(argArray[0]);
-                const result = target.bind(thisArg)(...argArray);
+                const result = target.call(thisArg, ...argArray);
                 this._checker.add(argArray[1], { peerDependency: true });
                 this._postDeserialize(result, argArray[1]);
                 return result;
@@ -40,7 +40,7 @@ export abstract class ResolvingBaseMerger<J, O, P extends ResolvingMergedPayload
     _postDeserialize(result: P, object: O): void {
         result.resolveAfter = new Proxy(result.resolveAfter, {
             apply: (target, thisArg, argArray: Parameters<ResolvingMergedPayload["resolveAfter"]>) => {
-                const ret = target.bind(thisArg)(...argArray);
+                const ret = target.call(thisArg, ...argArray);
                 this._checker.resolve(object, { peerDependency: true });
                 return ret;
             },

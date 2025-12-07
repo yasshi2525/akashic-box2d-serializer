@@ -17,7 +17,7 @@ export abstract class BaseDeserializer<J, P extends DeserializedPayload<O>, O = 
         this.deserialize = new Proxy(this.deserialize, {
             apply: (target, thisArg, argArray: Parameters<BaseDeserializer<J, P, O>["deserialize"]>) => {
                 this._validate(...argArray);
-                return target.bind(thisArg)(...argArray);
+                return target.call(thisArg, ...argArray);
             },
         });
     }
@@ -54,7 +54,7 @@ export abstract class ResolvingBaseDeserializer<J, P extends ResolvingDeserializ
         this._checker = param.checker;
         this.deserialize = new Proxy(this.deserialize, {
             apply: (target, thisArg, argArray: Parameters<ResolvingBaseDeserializer<J, P, O>["deserialize"]>) => {
-                const result = target.bind(thisArg)(...argArray);
+                const result = target.call(thisArg, ...argArray);
                 this._checker.add(result.value, this._getInitailResolvedResult(result));
                 this._postDeserialize(result);
                 return result;
@@ -73,7 +73,7 @@ export abstract class ResolvingBaseDeserializer<J, P extends ResolvingDeserializ
         if (result.resolve) {
             result.resolve = new Proxy(result.resolve, {
                 apply: (target, thisArg, argArray) => {
-                    const ret = target.bind(thisArg)(...argArray);
+                    const ret = target.call(thisArg, ...argArray);
                     this._checker.resolve(result.value, { dependency: true });
                     return ret;
                 },
@@ -82,7 +82,7 @@ export abstract class ResolvingBaseDeserializer<J, P extends ResolvingDeserializ
         if (result.resolveAfter) {
             result.resolveAfter = new Proxy(result.resolveAfter, {
                 apply: (target, thisArg, argArray: Parameters<NonNullable<ResolvingDeserializedPayload<O>["resolveAfter"]>>) => {
-                    const ret = target.bind(thisArg)(...argArray);
+                    const ret = target.call(thisArg, ...argArray);
                     this._checker.resolve(result.value, { peerDependency: true });
                     return ret;
                 },
@@ -103,7 +103,7 @@ export abstract class ResolvingSiblingBaseDeserializer<J, P extends ResolvingSib
         super._postDeserialize(result);
         result.resolveSibling = new Proxy(result.resolveSibling, {
             apply: (target, thisArg, argArray: Parameters<ResolvingSiblingDeserializedPayload<O>["resolveSibling"]>) => {
-                const ret = target.bind(thisArg)(...argArray);
+                const ret = target.call(thisArg, ...argArray);
                 this._checker.resolve(result.value, { sibling: true });
                 return ret;
             },
