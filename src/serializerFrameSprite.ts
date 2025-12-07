@@ -1,10 +1,6 @@
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
 import { SpriteParam, SpriteSerializer, SpriteSerializerParameterObject } from "./serializerSprite";
-
-/**
- * g.FrameSprite オブジェクト型の識別子
- */
-export const frameSpriteType = "FrameSprite";
+import { frameSpriteType } from "./serialize/entityType";
 
 /**
  * g.FrameSprite オブジェクトを復元可能な形式で直列化したJSONです。

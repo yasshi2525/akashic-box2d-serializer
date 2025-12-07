@@ -28,7 +28,8 @@ declare module "@akashic-extension/akashic-box2d" {
                 m_proxyCount: number; // 常に NaN で実質機能してない
             }
             class b2DynamicTreePair {
-                // TODO impl
+                proxyA: b2DynamicTreeNode;
+                proxyB: b2DynamicTreeNode;
             }
             interface b2ManifoldPoint {
                 // https://github.com/akashic-games/akashic-box2d/issues/102
@@ -91,7 +92,7 @@ declare module "@akashic-extension/akashic-box2d" {
             class b2ContactManager {
                 m_world: b2World;
                 m_broadPhase: Collision.b2DynamicTreeBroadPhase;
-                m_contactList: Contacts.b2Contact;
+                m_contactList?: Contacts.b2Contact;
                 m_contactCount: number;
                 m_contactFilter: b2ContactFilter;
                 m_contactListener: b2ContactListener;
@@ -138,9 +139,15 @@ declare module "@akashic-extension/akashic-box2d" {
                 m_flags: number;
             }
             interface b2Fixture {
+                m_density: number;
+                m_friction: number;
+                m_restitution: number;
+                m_aabb: Collision.b2AABB;
+                m_userData: any;
+                m_isSensor: boolean;
                 m_filter: b2FilterData;
                 m_next?: b2Fixture;
-                m_shape: Collision.Shapes.b2Shape;
+                m_shape?: Collision.Shapes.b2Shape;
                 m_body: b2Body | null;
                 m_proxy?: Collision.b2DynamicTreeNode;
             }
@@ -153,7 +160,7 @@ declare module "@akashic-extension/akashic-box2d" {
                 m_world: b2World;
                 m_jointList: Joints.b2Joint | null;
                 m_controllerList: Controllers.b2Controller | null;
-                m_contactList: Contacts.b2Contact | null;
+                m_contactList: Contacts.b2ContactEdge | null;
                 m_controllerCount: number;
                 m_prev: b2Body | null;
                 m_next: b2Body | null;

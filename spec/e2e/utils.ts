@@ -1,4 +1,5 @@
 import { EBody } from "@akashic-extension/akashic-box2d";
+import { expectToShallowEqualWorld } from "../unit/utils";
 
 export const expectShallowEqualsBodies = (received: EBody[], expected: EBody[]): void => {
     expect(received.length).toBe(expected.length);
@@ -14,3 +15,5 @@ export const expectShallowEqualsBodies = (received: EBody[], expected: EBody[]):
         expect(received[i].b2Body.GetLinearVelocity()).toEqual(expected[i].b2Body.GetLinearVelocity());
     }
 };
+
+export const expectShallowEqualsWorld = expectToShallowEqualWorld;

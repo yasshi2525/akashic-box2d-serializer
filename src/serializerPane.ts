@@ -1,11 +1,7 @@
 import { EntityParam, EntitySerializer, EntitySerializerParameterObject } from "./serializerEntity";
 import { ImageAssetParam, ImageAssetSerializer } from "./serializerImageAsset";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
-
-/**
- * g.Pane オブジェクト型の識別子
- */
-export const paneType = "Pane";
+import { paneType } from "./serialize/entityType";
 
 /**
  * g.Pane オブジェクトを復元可能な形式で直列化したJSONです。

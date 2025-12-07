@@ -1,5 +1,6 @@
+import { filledRectType } from "../../src/serialize/entityType";
 import { EntitySerializer } from "../../src/serializerEntity";
-import { FilledRectSerializer, filledRectType } from "../../src/serializerFilledRect";
+import { FilledRectSerializer } from "../../src/serializerFilledRect";
 import { PlainMatrixSerializer } from "../../src/serializerMatrixPlain";
 import { toExpectedEntity } from "./utils";
 

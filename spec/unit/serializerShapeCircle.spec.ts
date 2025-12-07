@@ -1,9 +1,11 @@
 import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
-import { CircleShapeSerializer, circleShapeType } from "../../src/serializerShapeCircle";
+import { CircleShapeSerializer, circleShapeType } from "../../src/serialize/shape";
+import { CircleShapeDeserializer } from "../../src/deserialize/shape";
 
 describe("CircleShapeSerializer", () => {
     let box2d: Box2D;
     let serializer: CircleShapeSerializer;
+    let deserializer: CircleShapeDeserializer;
 
     beforeEach(() => {
         box2d = new Box2D({
@@ -11,12 +13,7 @@ describe("CircleShapeSerializer", () => {
             scale: 10,
         });
         serializer = new CircleShapeSerializer();
-    });
-
-    it("set matched param", () => {
-        const shape = new Box2DWeb.Collision.Shapes.b2CircleShape(10);
-        const json = serializer.serialize(shape);
-        expect(serializer.filter(json.type)).toBe(true);
+        deserializer = new CircleShapeDeserializer();
     });
 
     it("can serialize circle", () => {
@@ -29,7 +26,7 @@ describe("CircleShapeSerializer", () => {
     it("can deserialize circle", () => {
         const circle = box2d.createCircleShape(20);
         const json = serializer.serialize(circle);
-        const object = serializer.deserialize(json);
+        const object = deserializer.deserialize(json).value;
         expect(object.GetType()).toBe(Box2DWeb.Collision.Shapes.b2Shape.e_circleShape);
         expect(object.GetRadius()).toBe(circle.GetRadius());
     });

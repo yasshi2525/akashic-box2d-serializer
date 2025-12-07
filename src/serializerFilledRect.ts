@@ -1,10 +1,6 @@
 import { EntityParam, EntitySerializer } from "./serializerEntity";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
-
-/**
- * g.FilledRect オブジェクト型の識別子
- */
-export const filledRectType = "FilledRect";
+import { filledRectType } from "./serialize/entityType";
 
 /**
  * g.FilledRect オブジェクトを復元可能な形式で直列化したJSONです。

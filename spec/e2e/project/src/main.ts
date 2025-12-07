@@ -18,6 +18,7 @@ export = (param: g.GameMainParameterObject): void => {
             gravity: [0, -9.8],
             scale: 10,
         });
+        g.game.vars.world = box2d.world;
         g.game.vars.bodies = box2d.bodies;
         const serializer = new Box2DSerializer({
             scene,

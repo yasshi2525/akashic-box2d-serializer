@@ -1,7 +1,8 @@
 import { EntitySerializer } from "../../src/serializerEntity";
 import { PlainMatrixSerializer } from "../../src/serializerMatrixPlain";
-import { LabelSerializer, labelType } from "../../src/serializerLabel";
+import { LabelSerializer } from "../../src/serializerLabel";
 import { toExpectedEntity } from "./utils";
+import { labelType } from "../../src/serialize/entityType";
 
 describe("LabelSerializer", () => {
     let serializer: LabelSerializer;
