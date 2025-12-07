@@ -498,6 +498,95 @@ describe("Box2DSerializer", () => {
         expect(ebody[0].entity).toEqual(expected);
     });
 
+    it("can deserialize derived g.FrameSprite (src = g.ImageAsset) class instance (default deserializer) (animating)", async () => {
+        let expectedFinished = false;
+        let actualFinished = false;
+        class SimpleFrameSprite extends g.FrameSprite {
+            readonly input1: string;
+            constructor(param: g.FrameSpriteParameterObject, input1: string) {
+                super(param);
+                this.input1 = input1;
+            }
+        }
+        const simpleFrameSprite = new SimpleFrameSprite({
+            scene,
+            parent: scene,
+            src: frameSpriteImageBefore,
+            width: 100,
+            height: 100,
+            loop: false,
+        }, "dummy");
+        simpleFrameSprite.start();
+        expect(simpleFrameSprite._timer).toBeTruthy();
+        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDefs);
+        serializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }), undefined, json => new SimpleFrameSprite(json, json.input1));
+        deserializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }), undefined, json => new SimpleFrameSprite(json, json.input1));
+        const json = serializer.serializeBodies();
+        const ebody = deserializer.desrializeBodies(json);
+        expect(ebody).toHaveLength(1);
+        expect(ebody[0].entity).toEqual(toExpectedEntity(simpleFrameSprite, ebody[0].entity));
+        const object = ebody[0].entity as SimpleFrameSprite;
+        expect(object._timer).toBeTruthy();
+        simpleFrameSprite.onFinish.add(() => {
+            expectedFinished = true;
+        });
+        object.onFinish.add(() => {
+            actualFinished = true;
+        });
+        expect(expectedFinished).toBe(false);
+        expect(actualFinished).toBe(false);
+        await step();
+        expect(simpleFrameSprite._timer).toBeFalsy();
+        expect(object._timer).toBeFalsy();
+        expect(expectedFinished).toBe(true);
+        expect(actualFinished).toBe(true);
+    });
+
+    it("can deserialize derived g.FrameSprite (src = g.ImageAsset) class instance (custom deserializer) (animating)", async () => {
+        let expectedFinished = false;
+        let actualFinished = false;
+        class SimpleFrameSprite extends g.FrameSprite {
+            readonly input1: string;
+            constructor(param: g.FrameSpriteParameterObject & { input1: string }) {
+                super(param);
+                this.input1 = param.input1;
+            }
+        }
+        const simpleFrameSprite = new SimpleFrameSprite({
+            scene,
+            parent: scene,
+            src: frameSpriteImageBefore,
+            width: 100,
+            height: 100,
+            input1: "dummy",
+            loop: false,
+        });
+        simpleFrameSprite.start();
+        expect(simpleFrameSprite._timer).toBeTruthy();
+        box2d.createBody(simpleFrameSprite, bodyDef, fixtureDefs);
+        serializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }));
+        deserializer.addDerivedFrameSpriteSerializer(SimpleFrameSprite, obj => ({ input1: obj.input1 }));
+        const json = serializer.serializeBodies();
+        const ebody = deserializer.desrializeBodies(json);
+        expect(ebody).toHaveLength(1);
+        expect(ebody[0].entity).toEqual(toExpectedEntity(simpleFrameSprite, ebody[0].entity));
+        const object = ebody[0].entity as SimpleFrameSprite;
+        expect(object._timer).toBeTruthy();
+        simpleFrameSprite.onFinish.add(() => {
+            expectedFinished = true;
+        });
+        object.onFinish.add(() => {
+            actualFinished = true;
+        });
+        expect(expectedFinished).toBe(false);
+        expect(actualFinished).toBe(false);
+        await step();
+        expect(simpleFrameSprite._timer).toBeFalsy();
+        expect(object._timer).toBeFalsy();
+        expect(expectedFinished).toBe(true);
+        expect(actualFinished).toBe(true);
+    });
+
     it("can deserialize derived g.Label class instance (default deserializer)", () => {
         class SimpleLabel extends g.Label {
             readonly input1: string;

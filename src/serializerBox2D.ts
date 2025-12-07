@@ -795,10 +795,18 @@ export class Box2DSerializer {
                         return obj;
                     }, baseParamObj as J & g.FrameSpriteParameterObject);
                 if (derivedDeserializer) {
-                    return derivedDeserializer(derivedParamObj);
+                    const object = derivedDeserializer(derivedParamObj);
+                    if (json.param.hasTimer) {
+                        object.start();
+                    }
+                    return object;
                 }
                 else {
-                    return new classType(derivedParamObj);
+                    const object = new classType(derivedParamObj);
+                    if (json.param.hasTimer) {
+                        object.start();
+                    }
+                    return object;
                 }
             }
         }({
