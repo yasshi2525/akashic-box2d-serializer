@@ -1,11 +1,7 @@
 import { EntityParam, EntitySerializer, EntitySerializerParameterObject } from "./serializerEntity";
 import { ImageAssetParam, ImageAssetSerializer } from "./serializerImageAsset";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
-
-/**
- * g.Sprite オブジェクト型の識別子
- */
-export const spriteType = "Sprite";
+import { spriteType } from "./serialize/entityType";
 
 /**
  * g.Sprite オブジェクトを復元可能な形式で直列化したJSONです。

@@ -1,4 +1,5 @@
-import { EntitySerializer, entityType } from "../../src/serializerEntity";
+import { entityType } from "../../src/serialize/entityType";
+import { EntitySerializer } from "../../src/serializerEntity";
 import { PlainMatrixSerializer } from "../../src/serializerMatrixPlain";
 import { createDefaultEntityParam, extractSerializedEntityParam } from "./utils";
 
@@ -17,7 +18,7 @@ describe("EntitySerializer", () => {
     });
 
     const createDefaultEntity = () => {
-        const param = createDefaultEntityParam();
+        const param = createDefaultEntityParam(scene);
         return { param, entity: new g.E({ scene }) };
     };
 

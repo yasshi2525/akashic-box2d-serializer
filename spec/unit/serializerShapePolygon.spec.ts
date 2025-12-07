@@ -1,10 +1,13 @@
 import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
-import { PolygonShapeSerializer, polygonShapeType } from "../../src/serializerShapePolygon";
-import { Vec2Serializer } from "../../src/serializerVec2";
+import { PolygonShapeSerializer, polygonShapeType } from "../../src/serialize/shape";
+import { PolygonShapeDeserializer } from "../../src/deserialize/shape";
+import { Vec2Serializer } from "../../src/serialize/vec2";
+import { Vec2Deserializer } from "../../src/deserialize/vec2";
 
 describe("PolygonShapeSerializer", () => {
     let box2d: Box2D;
     let serializer: PolygonShapeSerializer;
+    let deserializer: PolygonShapeDeserializer;
 
     beforeEach(() => {
         box2d = new Box2D({
@@ -12,14 +15,11 @@ describe("PolygonShapeSerializer", () => {
             scale: 10,
         });
         serializer = new PolygonShapeSerializer({
-            vec2Serializer: new Vec2Serializer(),
+            vec2: new Vec2Serializer(),
         });
-    });
-
-    it("set matched param", () => {
-        const shape = new Box2DWeb.Collision.Shapes.b2PolygonShape();
-        const json = serializer.serialize(shape);
-        expect(serializer.filter(json.type)).toBe(true);
+        deserializer = new PolygonShapeDeserializer({
+            vec2: new Vec2Deserializer(),
+        });
     });
 
     it("can serialize polygon", () => {
@@ -47,7 +47,7 @@ describe("PolygonShapeSerializer", () => {
         ];
         const polygon = box2d.createPolygonShape(vertices);
         const json = serializer.serialize(polygon);
-        const object = serializer.deserialize(json);
+        const object = deserializer.deserialize(json).value;
         expect(object.GetType()).toBe(Box2DWeb.Collision.Shapes.b2Shape.e_polygonShape);
         expect(object.GetVertexCount()).toBe(3);
         expect(object.GetVertices()).toEqual(vertices);
@@ -56,7 +56,7 @@ describe("PolygonShapeSerializer", () => {
     it("can deserialize box", () => {
         const box = box2d.createRectShape(100, 100);
         const json = serializer.serialize(box);
-        const object = serializer.deserialize(json);
+        const object = deserializer.deserialize(json).value;
         expect(object.GetType()).toBe(Box2DWeb.Collision.Shapes.b2Shape.e_polygonShape);
         expect(object.GetVertexCount()).toBe(4);
         expect(object.GetVertices()).toEqual([

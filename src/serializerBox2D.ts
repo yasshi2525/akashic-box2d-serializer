@@ -1,11 +1,5 @@
 import { Box2D, Box2DWeb, EBody } from "@akashic-extension/akashic-box2d";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
-import { EBodyParam, EBodySerializer } from "./serializerEbody";
-import { CircleShapeSerializer } from "./serializerShapeCircle";
-import { PolygonShapeSerializer } from "./serializerShapePolygon";
-import { ShapeSerializer } from "./serializerShape";
-import { FixtureParam, fixtureRefType, FixtureSerializer } from "./serializerFixture";
-import { bodyRefType, BodySerializer } from "./serializerBody";
 import { EntityParam, EntitySerializer } from "./serializerEntity";
 import { FilledRectParam, FilledRectSerializer } from "./serializerFilledRect";
 import { ImageAssetSerializer } from "./serializerImageAsset";
@@ -13,42 +7,78 @@ import { SpriteParam, SpriteSerializer, SpriteSurfaceDeserializer } from "./seri
 import { FrameSpriteParam, FrameSpriteSerializer, FrameSpriteSurfaceDeserializer } from "./serializerFrameSprite";
 import { LabelFontDeserializer, LabelParam, LabelSerializer } from "./serializerLabel";
 import { PaneParam, PaneSerializer, PaneSurfaceDeserializer } from "./serializerPane";
-import { FilterDataSerializer } from "./serializerFilterData";
-import { Vec2Serializer } from "./serializerVec2";
-import { SweepSerializer } from "./serializerSweep";
 import { PlainMatrixSerializer } from "./serializerMatrixPlain";
-import { Mat22Serializer } from "./serializerMat22";
-import { TransformSerializer } from "./serializerTransform";
-import { dynamicTreeNodeRefType, DynamicTreeNodeSerializer } from "./serializerTreeNodeDynamic";
-import { AABBSerializer } from "./serializerAABB";
-import { DynamicTreeParam, DynamicTreeSerializer } from "./serializerTreeDynamic";
-import { ObjectMapper } from "./objectMapper";
-import { toFixture } from "./converterFixture";
-import { ContactParam, ContactSerializer } from "./serializerContact";
-import { ContactEdgeParam, contactEdgeRefType, ContactEdgeSerializer, contactEdgeType } from "./serializerContactEdge";
-import { ContactObjectMapper } from "./objectMapperContact";
-import { ManifoldPointSerializer } from "./serializerManifoldPoint";
-import { ManifoldSerializer } from "./serializerManifold";
-import { ContactIDSerializer } from "./serializerContactID";
-import { FeaturesSerializer } from "./serializerFeatures";
+import { ObjectStore, toRefTypeName } from "./scan/store";
+import { ComplexObjectStore } from "./scan/storeComplex";
+import { BodyScanner } from "./scan/body";
+import { FixtureScanner } from "./scan/fixture";
+import { DynamicTreeNodeScanner } from "./scan/treeNode";
+import { DynamicTreePairScanner } from "./scan/treePair";
+import { DynamicTreeScanner } from "./scan/tree";
+import { DynamicTreeBroadPhaseScanner } from "./scan/broadPhase";
+import { ContactScanner } from "./scan/contact";
+import { ContactEdgeScanner } from "./scan/contactEdge";
+import { ContactManagerScanner } from "./scan/contactManager";
+import { Box2DScanner } from "./scan/box2d";
+import { EBodyScanner } from "./scan/ebody";
+import { WorldScanner } from "./scan/world";
+import { Vec2Serializer } from "./serialize/vec2";
+import { Mat22Serializer } from "./serialize/mat22";
+import { TransformSerializer } from "./serialize/transform";
+import { SweepSerializer } from "./serialize/sweep";
+import { BodySerializer, bodyType } from "./serialize/body";
+import { CircleShapeSerializer, PolygonShapeSerializer, ShapeSerializer } from "./serialize/shape";
+import { FilterDataSerializer } from "./serialize/filterData";
+import { AABBSerializer } from "./serialize/aabb";
+import { FixtureSerializer, fixtureType } from "./serialize/fixture";
+import { DynamicTreeNodeSerializer, dynamicTreeNodeType } from "./serialize/treeNode";
+import { DynamicTreePairSerializer, dynamicTreePairType } from "./serialize/treePair";
+import { DynamicTreeSerializer } from "./serialize/tree";
+import { DynamicTreeBroadPhaseSerializer } from "./serialize/broadPhase";
+import { FeaturesSerializer } from "./serialize/features";
+import { ContactIDSerializer } from "./serialize/contactID";
+import { ManifoldPointSerializer } from "./serialize/manifoldPoint";
+import { ManifoldSerializer } from "./serialize/manifold";
+import { ContactSerializer, contactTypes, resolveContactTypeName } from "./serialize/contact";
+import { ContactEdgeSerializer, contactEdgeType } from "./serialize/contactEdge";
+import { ContactManagerSerializer } from "./serialize/contactManager";
+import { EBodySerializer } from "./serialize/ebody";
+import { WorldSerializer } from "./serialize/world";
+import { ReferredStoreSerializer } from "./serialize/referred";
+import { BaseBox2DSerializer, box2DType } from "./serialize/box2d";
+import { Box2DParam } from "./param/box2d";
+import { ObjectResolver } from "./deserialize/resolver";
+import { ComplexObjectResolver } from "./deserialize/resolverComplex";
+import { UnresolverChecker } from "./deserialize/checker";
+import { Vec2Deserializer } from "./deserialize/vec2";
+import { Mat22Deserializer } from "./deserialize/mat22";
+import { SweepDeserializer } from "./deserialize/sweep";
+import { TransformDeserializer } from "./deserialize/transform";
+import { BodyDeserializer, BodyDeserializedPayload } from "./deserialize/body";
+import { CircleShapeDeserializer, PolygonShapeDeserializer, ShapeDeserializer } from "./deserialize/shape";
+import { FilterDataDeserializer } from "./deserialize/filterData";
+import { AABBDeserializer } from "./deserialize/aabb";
+import { FixtureDeserializer, FixtureDeserializedPayload } from "./deserialize/fixture";
+import { DynamicTreeNodeDeserializer, DynamicTreeNodeDeserializedPayload } from "./deserialize/treeNode";
+import { DynamicTreePairDeserializer } from "./deserialize/treePair";
+import { DynamicTreeDeserializer } from "./deserialize/tree";
+import { DynamicTreeBroadPhaseDeserializer } from "./deserialize/broadPhase";
+import { FeaturesDeserializer } from "./deserialize/features";
+import { ContactIDDeserializer } from "./deserialize/contactID";
+import { ManifoldPointDeserializer } from "./deserialize/manifoldPoint";
+import { ManifoldDeserializer } from "./deserialize/manifold";
+import { ContactDeserializer, ContactDeserializedPayload } from "./deserialize/contact";
+import { ContactEdgeDeserializer, ContactEdgeDeserializedPayload } from "./deserialize/contactEdge";
+import { EBodyDeserializer } from "./deserialize/ebody";
+import { ReferredStoreDeserializer } from "./deserialize/referred";
+import { ContactManagerMerger } from "./merge/contactManager";
+import { WorldMerger } from "./merge/world";
+import { Box2DMerger } from "./merge/box2d";
 
 /**
  * Box2D の EBody を復元可能な形式で直列化したJSONです。
  */
-export interface Box2DBodiesParam {
-    bodies: ObjectDef<EBodyParam>[];
-    fixtures: ObjectDef<FixtureParam>[];
-    contactManager: {
-        broadPhase: {
-            tree: ObjectDef<DynamicTreeParam>;
-        };
-    };
-    contactList: {
-        contacts: ObjectDef<ContactParam>[];
-        contactEdges: ObjectDef<ContactEdgeParam>[];
-    };
-    ebodyCount: number;
-}
+export type Box2DBodiesParam = ObjectDef<Box2DParam>;
 
 export interface Box2DSerializerParameterObject {
     scene: g.Scene;
@@ -81,22 +111,6 @@ export interface Box2DSerializerParameterObject {
 export class Box2DSerializer {
     readonly _scene: g.Scene;
     readonly _box2d: Box2D;
-    readonly _fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
-    readonly _fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
-    readonly _dynamicTreeNodeMapper: ObjectMapper<Box2DWeb.Collision.b2DynamicTreeNode>;
-    readonly _bodyMapper: ObjectMapper<Box2DWeb.Dynamics.b2Body>;
-    readonly _contactMapper: ContactObjectMapper;
-    readonly _contactEdgeMapper: ObjectMapper<Box2DWeb.Dynamics.Contacts.b2ContactEdge>;
-    readonly _circleShapeSerializer: CircleShapeSerializer;
-    readonly _vec2serializer: Vec2Serializer;
-    readonly _polygonShapeSerializer: PolygonShapeSerializer;
-    readonly _shapeSerializer: ShapeSerializer;
-    readonly _filterDataSerializer: FilterDataSerializer;
-    readonly _AABBSerializer: AABBSerializer;
-    readonly _dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
-    readonly _dynamicTreeSerializer: DynamicTreeSerializer;
-    readonly _fixtureSerializer: FixtureSerializer;
-    readonly _bodySerializer: BodySerializer;
     readonly _plainMatrixSerializer: PlainMatrixSerializer;
     readonly _entitySerializer: EntitySerializer;
     readonly _filledRectSerializer: FilledRectSerializer;
@@ -106,68 +120,86 @@ export class Box2DSerializer {
     readonly _labelSerializer: LabelSerializer;
     readonly _paneSerializer: PaneSerializer;
     readonly _entitySerializers: EntitySerializer[];
-    readonly _sweepSerializer: SweepSerializer;
+    readonly _bodyStore: ObjectStore<Box2DWeb.Dynamics.b2Body>;
+    readonly _fixtureStore: ObjectStore<Box2DWeb.Dynamics.b2Fixture>;
+    readonly _dynamicTreeNodeStore: ObjectStore<Box2DWeb.Collision.b2DynamicTreeNode>;
+    readonly _dynamicTreePairStore: ObjectStore<Box2DWeb.Collision.b2DynamicTreePair>;
+    readonly _contactStore: ComplexObjectStore<Box2DWeb.Dynamics.Contacts.b2Contact>;
+    readonly _contactEdgeStore: ObjectStore<Box2DWeb.Dynamics.Contacts.b2ContactEdge>;
+    readonly _bodyScnaner: BodyScanner;
+    readonly _fixtureScanner: FixtureScanner;
+    readonly _dynamicTreeNodeScanner: DynamicTreeNodeScanner;
+    readonly _dynamicTreePairScanner: DynamicTreePairScanner;
+    readonly _dynamicTreeScanner: DynamicTreeScanner;
+    readonly _dynamicTreeBroadPhaseScanner: DynamicTreeBroadPhaseScanner;
+    readonly _contactEdgeScanner: ContactEdgeScanner;
+    readonly _contactScanner: ContactScanner;
+    readonly _contactManagerScanner: ContactManagerScanner;
+    readonly _ebodyScanner: EBodyScanner;
+    readonly _worldScanner: WorldScanner;
+    readonly _box2dScanner: Box2DScanner;
+    readonly _vec2Serializer: Vec2Serializer;
     readonly _mat22Serializer: Mat22Serializer;
     readonly _transformSerializer: TransformSerializer;
-    readonly _eBodySerializer: EBodySerializer;
-    readonly _featuresSeriazlier: FeaturesSerializer;
+    readonly _sweepSerializer: SweepSerializer;
+    readonly _bodySerializer: BodySerializer;
+    readonly _circleShapeSerializer: CircleShapeSerializer;
+    readonly _polygonShapeSerializer: PolygonShapeSerializer;
+    readonly _shapeSerializer: ShapeSerializer;
+    readonly _filterDataSerializer: FilterDataSerializer;
+    readonly _fixtureSerializer: FixtureSerializer;
+    readonly _aabbSerializer: AABBSerializer;
+    readonly _dynamicTreeNodeSerializer: DynamicTreeNodeSerializer;
+    readonly _dynamicTreePairSerializer: DynamicTreePairSerializer;
+    readonly _dynamicTreeSerializer: DynamicTreeSerializer;
+    readonly _dynamicTreeBroadPhaseSerializer: DynamicTreeBroadPhaseSerializer;
+    readonly _featuresSerializer: FeaturesSerializer;
     readonly _contactIDSerializer: ContactIDSerializer;
     readonly _manifoldPointSerializer: ManifoldPointSerializer;
     readonly _manifoldSerializer: ManifoldSerializer;
-    readonly _contactEdgeSerializer: ContactEdgeSerializer;
     readonly _contactSerializer: ContactSerializer;
+    readonly _contactEdgeSerializer: ContactEdgeSerializer;
+    readonly _contactManagerSerializer: ContactManagerSerializer;
+    readonly _ebodySerializer: EBodySerializer;
+    readonly _worldSerializer: WorldSerializer;
+    readonly _referredStoreSerializer: ReferredStoreSerializer;
+    readonly _box2dSerializer: BaseBox2DSerializer;
+    readonly _unresolverChecker: UnresolverChecker;
+    readonly _bodyResolver: ObjectResolver<BodyDeserializedPayload>;
+    readonly _fixtureResolver: ObjectResolver<FixtureDeserializedPayload>;
+    readonly _dynamicTreeNodeResolver: ObjectResolver<DynamicTreeNodeDeserializedPayload>;
+    readonly _contactResolver: ComplexObjectResolver<ContactDeserializedPayload>;
+    readonly _contactEdgeResolver: ObjectResolver<ContactEdgeDeserializedPayload>;
+    readonly _vec2Deserializer: Vec2Deserializer;
+    readonly _mat22Deserializer: Mat22Deserializer;
+    readonly _transformDeserializer: TransformDeserializer;
+    readonly _sweepDeserializer: SweepDeserializer;
+    readonly _bodyDeserializer: BodyDeserializer;
+    readonly _circleShapeDeserializer: CircleShapeDeserializer;
+    readonly _polygonShapeDeserializer: PolygonShapeDeserializer;
+    readonly _shapeDeserializer: ShapeDeserializer;
+    readonly _filterDataDeserializer: FilterDataDeserializer;
+    readonly _fixtureDeserializer: FixtureDeserializer;
+    readonly _aabbDeserializer: AABBDeserializer;
+    readonly _dynamicTreeNodeDeserializer: DynamicTreeNodeDeserializer;
+    readonly _dynamicTreePairDeserializer: DynamicTreePairDeserializer;
+    readonly _dynamicTreeDeserializer: DynamicTreeDeserializer;
+    readonly _dynamicTreeBroadPhaseDeserializer: DynamicTreeBroadPhaseDeserializer;
+    readonly _featuresDeserializer: FeaturesDeserializer;
+    readonly _contactIDDeserializer: ContactIDDeserializer;
+    readonly _manifoldPointDeserializer: ManifoldPointDeserializer;
+    readonly _manifoldDeserializer: ManifoldDeserializer;
+    readonly _contactDeserializer: ContactDeserializer;
+    readonly _contactEdgeDeserializer: ContactEdgeDeserializer;
+    readonly _contactManagerMerger: ContactManagerMerger;
+    readonly _ebodyDeserializer: EBodyDeserializer;
+    readonly _worldMerger: WorldMerger;
+    readonly _box2dMerger: Box2DMerger;
+    readonly _referredStoreDeserializer: ReferredStoreDeserializer;
 
     constructor(param: Box2DSerializerParameterObject) {
         this._scene = param.scene;
         this._box2d = param.box2d;
-        this._fixtureMapper = new ObjectMapper({
-            refTypeName: fixtureRefType,
-        });
-        this._fixtureDefMapper = new ObjectMapper({
-            refTypeName: fixtureRefType,
-        });
-        this._dynamicTreeNodeMapper = new ObjectMapper({
-            refTypeName: dynamicTreeNodeRefType,
-        });
-        this._bodyMapper = new ObjectMapper({
-            refTypeName: bodyRefType,
-        });
-        this._contactMapper = new ContactObjectMapper();
-        this._contactEdgeMapper = new ObjectMapper({
-            refTypeName: contactEdgeRefType,
-        });
-        this._circleShapeSerializer = new CircleShapeSerializer();
-        this._vec2serializer = new Vec2Serializer();
-        this._polygonShapeSerializer = new PolygonShapeSerializer({
-            vec2Serializer: this._vec2serializer,
-        });
-        this._shapeSerializer = new ShapeSerializer({
-            circleShapeSerializer: this._circleShapeSerializer,
-            polygonShapeSerializer: this._polygonShapeSerializer,
-        });
-        this._filterDataSerializer = new FilterDataSerializer();
-        this._AABBSerializer = new AABBSerializer({
-            vec2Serializer: this._vec2serializer,
-        });
-        this._dynamicTreeNodeSerializer = new DynamicTreeNodeSerializer({
-            aabbSerializer: this._AABBSerializer,
-            selfMapper: this._dynamicTreeNodeMapper,
-            userDataMapper: this._fixtureMapper,
-        });
-        this._dynamicTreeSerializer = new DynamicTreeSerializer({
-            nodeSerializer: this._dynamicTreeNodeSerializer,
-            nodeMapper: this._dynamicTreeNodeMapper,
-        });
-        this._fixtureSerializer = new FixtureSerializer({
-            filterDataSerializer: this._filterDataSerializer,
-            shapeSerializer: this._shapeSerializer,
-            selfMapper: this._fixtureMapper,
-        });
-        this._bodySerializer = new BodySerializer({
-            vec2Serializer: this._vec2serializer,
-            fixtureMapper: this._fixtureMapper,
-            selfMapper: this._bodyMapper,
-        });
         this._entitySerializers = [];
         this._plainMatrixSerializer = new PlainMatrixSerializer();
         this._entitySerializer = new EntitySerializer({
@@ -219,50 +251,304 @@ export class Box2DSerializer {
         this._entitySerializers.push(this._frameSpriteSerializer);
         this._entitySerializers.push(this._labelSerializer);
         this._entitySerializers.push(this._paneSerializer);
-        this._sweepSerializer = new SweepSerializer({
-            vec2Serializer: this._vec2serializer,
+        this._bodyStore = new ObjectStore(bodyType);
+        this._fixtureStore = new ObjectStore(fixtureType);
+        this._dynamicTreeNodeStore = new ObjectStore(dynamicTreeNodeType);
+        this._dynamicTreePairStore = new ObjectStore(dynamicTreePairType);
+        this._contactStore = new ComplexObjectStore([...contactTypes], resolveContactTypeName);
+        this._contactEdgeStore = new ObjectStore(contactEdgeType);
+        this._bodyScnaner = new BodyScanner({
+            self: this._bodyStore,
+            fixture: () => this._fixtureScanner,
+            contactEdge: () => this._contactEdgeScanner,
         });
+        this._fixtureScanner = new FixtureScanner({
+            self: this._fixtureStore,
+            body: this._bodyScnaner,
+            proxy: () => this._dynamicTreeNodeScanner,
+        });
+        this._dynamicTreeNodeScanner = new DynamicTreeNodeScanner({
+            self: this._dynamicTreeNodeStore,
+            fixture: this._fixtureScanner,
+        });
+        this._dynamicTreePairScanner = new DynamicTreePairScanner({
+            self: this._dynamicTreePairStore,
+            node: this._dynamicTreeNodeScanner,
+        });
+        this._dynamicTreeScanner = new DynamicTreeScanner({
+            node: this._dynamicTreeNodeScanner,
+        });
+        this._dynamicTreeBroadPhaseScanner = new DynamicTreeBroadPhaseScanner({
+            tree: this._dynamicTreeScanner,
+            pair: this._dynamicTreePairScanner,
+            node: this._dynamicTreeNodeScanner,
+        });
+        this._contactEdgeScanner = new ContactEdgeScanner({
+            self: this._contactEdgeStore,
+            body: this._bodyScnaner,
+            contact: () => this._contactScanner,
+        });
+        this._contactScanner = new ContactScanner({
+            self: this._contactStore,
+            node: this._contactEdgeScanner,
+            fixture: this._fixtureScanner,
+        });
+        this._contactManagerScanner = new ContactManagerScanner({
+            broadPhase: this._dynamicTreeBroadPhaseScanner,
+            contact: this._contactScanner,
+        });
+        this._ebodyScanner = new EBodyScanner({
+            body: this._bodyScnaner,
+        });
+        this._worldScanner = new WorldScanner({
+            body: this._bodyScnaner,
+            contactManager: this._contactManagerScanner,
+            contact: this._contactScanner,
+        });
+        this._box2dScanner = new Box2DScanner({
+            world: this._worldScanner,
+            ebody: this._ebodyScanner,
+        });
+        this._vec2Serializer = new Vec2Serializer();
         this._mat22Serializer = new Mat22Serializer({
-            vec2Serializer: this._vec2serializer,
+            vec2: this._vec2Serializer,
         });
         this._transformSerializer = new TransformSerializer({
-            vec2Serializer: this._vec2serializer,
-            mat22Serializer: this._mat22Serializer,
+            vec2: this._vec2Serializer,
+            mat22: this._mat22Serializer,
         });
-        this._eBodySerializer = new EBodySerializer({
-            box2d: this._box2d,
-            bodySerializer: this._bodySerializer,
-            fixtureSerializer: this._fixtureSerializer,
-            sweepSerializer: this._sweepSerializer,
-            vec2Serializer: this._vec2serializer,
-            transformSerializer: this._transformSerializer,
-            entitySerializers: this._entitySerializers,
-            fixtureMapper: this._fixtureMapper,
-            fixtureDefMapper: this._fixtureDefMapper,
-            bodyMapper: this._bodyMapper,
+        this._sweepSerializer = new SweepSerializer({
+            vec2: this._vec2Serializer,
         });
-        this._featuresSeriazlier = new FeaturesSerializer();
+        this._bodySerializer = new BodySerializer({
+            vec2: this._vec2Serializer,
+            sweep: this._sweepSerializer,
+            transform: this._transformSerializer,
+            self: this._bodyStore,
+            fixture: this._fixtureStore,
+            contactEdge: this._contactEdgeStore,
+        });
+        this._circleShapeSerializer = new CircleShapeSerializer();
+        this._polygonShapeSerializer = new PolygonShapeSerializer({
+            vec2: this._vec2Serializer,
+        });
+        this._shapeSerializer = new ShapeSerializer({
+            circle: this._circleShapeSerializer,
+            polygon: this._polygonShapeSerializer,
+        });
+        this._filterDataSerializer = new FilterDataSerializer();
+        this._aabbSerializer = new AABBSerializer({
+            vec2: this._vec2Serializer,
+        });
+        this._fixtureSerializer = new FixtureSerializer({
+            aabb: this._aabbSerializer,
+            filterData: this._filterDataSerializer,
+            shape: this._shapeSerializer,
+            self: this._fixtureStore,
+            body: this._bodyStore,
+            node: this._dynamicTreeNodeStore,
+        });
+        this._dynamicTreeNodeSerializer = new DynamicTreeNodeSerializer({
+            aabb: this._aabbSerializer,
+            self: this._dynamicTreeNodeStore,
+            fixture: this._fixtureStore,
+        });
+        this._dynamicTreePairSerializer = new DynamicTreePairSerializer({
+            node: this._dynamicTreeNodeStore,
+        });
+        this._dynamicTreeSerializer = new DynamicTreeSerializer({
+            node: this._dynamicTreeNodeStore,
+        });
+        this._dynamicTreeBroadPhaseSerializer = new DynamicTreeBroadPhaseSerializer({
+            tree: this._dynamicTreeSerializer,
+            pair: this._dynamicTreePairSerializer,
+            node: this._dynamicTreeNodeStore,
+        });
+        this._featuresSerializer = new FeaturesSerializer();
         this._contactIDSerializer = new ContactIDSerializer({
-            featuresSerializer: this._featuresSeriazlier,
+            features: this._featuresSerializer,
         });
         this._manifoldPointSerializer = new ManifoldPointSerializer({
-            contactIDSerializer: this._contactIDSerializer,
-            vec2Serializer: this._vec2serializer,
+            contactID: this._contactIDSerializer,
+            vec2: this._vec2Serializer,
         });
         this._manifoldSerializer = new ManifoldSerializer({
-            vec2serializer: this._vec2serializer,
-            manifoldPointSerializer: this._manifoldPointSerializer,
+            vec2: this._vec2Serializer,
+            manifoldPoint: this._manifoldPointSerializer,
         });
         this._contactSerializer = new ContactSerializer({
-            manifoldSerialilzer: this._manifoldSerializer,
-            contactEdgeMapper: this._contactEdgeMapper,
-            fixtureMapper: this._fixtureMapper,
-            selfMapper: this._contactMapper,
+            manifold: this._manifoldSerializer,
+            self: this._contactStore,
+            node: this._contactEdgeStore,
+            fixture: this._fixtureStore,
         });
         this._contactEdgeSerializer = new ContactEdgeSerializer({
-            contactMapper: this._contactMapper,
-            selfMapper: this._contactEdgeMapper,
-            bodyMapper: this._bodyMapper,
+            self: this._contactEdgeStore,
+            body: this._bodyStore,
+            contact: this._contactStore,
+        });
+        this._contactManagerSerializer = new ContactManagerSerializer({
+            contact: this._contactStore,
+            broadPhase: this._dynamicTreeBroadPhaseSerializer,
+        });
+        this._ebodySerializer = new EBodySerializer({
+            entities: this._entitySerializers,
+            body: this._bodyStore,
+        });
+        this._worldSerializer = new WorldSerializer({
+            contactManager: this._contactManagerSerializer,
+            body: this._bodyStore,
+            contact: this._contactStore,
+        });
+        this._referredStoreSerializer = new ReferredStoreSerializer({
+            body: this._bodySerializer,
+            fixture: this._fixtureSerializer,
+            node: this._dynamicTreeNodeSerializer,
+            contact: this._contactSerializer,
+            contactEdge: this._contactEdgeSerializer,
+            bodyStore: this._bodyStore,
+            fixtureStore: this._fixtureStore,
+            nodeStore: this._dynamicTreeNodeStore,
+            contactStore: this._contactStore,
+            contactEdgeStore: this._contactEdgeStore,
+        });
+        this._box2dSerializer = new BaseBox2DSerializer({
+            ebody: this._ebodySerializer,
+            world: this._worldSerializer,
+            referred: this._referredStoreSerializer,
+        });
+        this._unresolverChecker = new UnresolverChecker();
+        this._bodyResolver = new ObjectResolver(toRefTypeName(bodyType));
+        this._fixtureResolver = new ObjectResolver(toRefTypeName(fixtureType));
+        this._dynamicTreeNodeResolver = new ObjectResolver(toRefTypeName(dynamicTreeNodeType));
+        this._contactResolver = new ComplexObjectResolver(contactTypes.map(t => toRefTypeName(t)));
+        this._contactEdgeResolver = new ObjectResolver(toRefTypeName(contactEdgeType));
+        this._vec2Deserializer = new Vec2Deserializer();
+        this._sweepDeserializer = new SweepDeserializer({
+            vec2: this._vec2Deserializer,
+        });
+        this._mat22Deserializer = new Mat22Deserializer({
+            vec2: this._vec2Deserializer,
+        });
+        this._transformDeserializer = new TransformDeserializer({
+            vec2: this._vec2Deserializer,
+            mat22: this._mat22Deserializer,
+        });
+        this._sweepDeserializer = new SweepDeserializer({
+            vec2: this._vec2Deserializer,
+        });
+        this._bodyDeserializer = new BodyDeserializer({
+            checker: this._unresolverChecker,
+            world: this._box2d.world,
+            vec2: this._vec2Deserializer,
+            sweep: this._sweepDeserializer,
+            transform: this._transformDeserializer,
+            self: this._bodyResolver,
+            fixture: this._fixtureResolver,
+            contactEdge: this._contactEdgeResolver,
+        });
+        this._circleShapeDeserializer = new CircleShapeDeserializer();
+        this._polygonShapeDeserializer = new PolygonShapeDeserializer({
+            vec2: this._vec2Deserializer,
+        });
+        this._shapeDeserializer = new ShapeDeserializer({
+            circle: this._circleShapeDeserializer,
+            polygon: this._polygonShapeDeserializer,
+        });
+        this._filterDataDeserializer = new FilterDataDeserializer();
+        this._aabbDeserializer = new AABBDeserializer({
+            vec2: this._vec2Deserializer,
+        });
+        this._fixtureDeserializer = new FixtureDeserializer({
+            checker: this._unresolverChecker,
+            aabb: this._aabbDeserializer,
+            filterData: this._filterDataDeserializer,
+            self: this._fixtureResolver,
+            shape: this._shapeDeserializer,
+            body: this._bodyResolver,
+            node: this._dynamicTreeNodeResolver,
+        });
+        this._dynamicTreeNodeDeserializer = new DynamicTreeNodeDeserializer({
+            checker: this._unresolverChecker,
+            aabb: this._aabbDeserializer,
+            self: this._dynamicTreeNodeResolver,
+            fixture: this._fixtureResolver,
+        });
+        this._dynamicTreePairDeserializer = new DynamicTreePairDeserializer({
+            checker: this._unresolverChecker,
+            node: this._dynamicTreeNodeResolver,
+        });
+        this._dynamicTreeDeserializer = new DynamicTreeDeserializer({
+            checker: this._unresolverChecker,
+            node: this._dynamicTreeNodeResolver,
+        });
+        this._dynamicTreeBroadPhaseDeserializer = new DynamicTreeBroadPhaseDeserializer({
+            checker: this._unresolverChecker,
+            tree: this._dynamicTreeDeserializer,
+            pair: this._dynamicTreePairDeserializer,
+            node: this._dynamicTreeNodeResolver,
+        });
+        this._featuresDeserializer = new FeaturesDeserializer({
+            checker: this._unresolverChecker,
+        });
+        this._contactIDDeserializer = new ContactIDDeserializer({
+            features: this._featuresDeserializer,
+        });
+        this._manifoldPointDeserializer = new ManifoldPointDeserializer({
+            contactID: this._contactIDDeserializer,
+            vec2: this._vec2Deserializer,
+        });
+        this._manifoldDeserializer = new ManifoldDeserializer({
+            vec2: this._vec2Deserializer,
+            manifoldPoint: this._manifoldPointDeserializer,
+        });
+        this._contactDeserializer = new ContactDeserializer({
+            checker: this._unresolverChecker,
+            manifold: this._manifoldDeserializer,
+            self: this._contactResolver,
+            node: this._contactEdgeResolver,
+            fixture: this._fixtureResolver,
+        });
+        this._contactEdgeDeserializer = new ContactEdgeDeserializer({
+            checker: this._unresolverChecker,
+            self: this._contactEdgeResolver,
+            body: this._bodyResolver,
+            contact: this._contactResolver,
+        });
+        this._contactManagerMerger = new ContactManagerMerger({
+            checker: this._unresolverChecker,
+            broadPhase: this._dynamicTreeBroadPhaseDeserializer,
+            contact: this._contactResolver,
+        });
+        this._ebodyDeserializer = new EBodyDeserializer({
+            checker: this._unresolverChecker,
+            entities: this._entitySerializers,
+            body: this._bodyResolver,
+        });
+        this._worldMerger = new WorldMerger({
+            checker: this._unresolverChecker,
+            contactManager: this._contactManagerMerger,
+            body: this._bodyResolver,
+            contact: this._contactResolver,
+        });
+        this._box2dMerger = new Box2DMerger({
+            checker: this._unresolverChecker,
+            world: this._worldMerger,
+            ebody: this._ebodyDeserializer,
+            body: this._bodyResolver,
+        });
+        this._referredStoreDeserializer = new ReferredStoreDeserializer({
+            checker: this._unresolverChecker,
+            body: this._bodyDeserializer,
+            fixture: this._fixtureDeserializer,
+            node: this._dynamicTreeNodeDeserializer,
+            contact: this._contactDeserializer,
+            contactEdge: this._contactEdgeDeserializer,
+            bodyResolver: this._bodyResolver,
+            fixtureResolver: this._fixtureResolver,
+            nodeResolver: this._dynamicTreeNodeResolver,
+            contactResolver: this._contactResolver,
+            contactEdgeResolver: this._contactEdgeResolver,
         });
     }
 
@@ -271,29 +557,9 @@ export class Box2DSerializer {
      * @returns 直列化されたJSON
      */
     serializeBodies(): Box2DBodiesParam {
-        const bodies = this._box2d.bodies.map(ebody => this._eBodySerializer.serialize(ebody));
-        const tree = this._dynamicTreeSerializer.serialize(this._box2d.world.m_contactManager.m_broadPhase.m_tree);
-        const fixtures = this._fixtureMapper.objects().map(f => this._fixtureSerializer.serialize(f));
-        const contacts: ObjectDef<ContactParam>[] = [];
-        for (let c = this._box2d.world.GetContactList(); c; c = c.GetNext()) {
-            contacts.push(this._contactSerializer.serialize(c));
-        }
-        const contactEdges = this._contactEdgeMapper.objects().map(e => this._contactEdgeSerializer.serialize(e));
-        const result: Box2DBodiesParam = {
-            bodies,
-            fixtures,
-            contactManager: {
-                broadPhase: {
-                    tree,
-                },
-            },
-            contactList: {
-                contacts,
-                contactEdges,
-            },
-            ebodyCount: (this._box2d as any)._createBodyCount,
-        };
-        this._cleanup();
+        this._box2dScanner.scan(this._box2d);
+        const result = this._box2dSerializer.serialize(this._box2d);
+        this._cleanupStore();
         return result;
     }
 
@@ -304,50 +570,15 @@ export class Box2DSerializer {
      * @returns 復元された {@link EBody}
      */
     desrializeBodies(json: Box2DBodiesParam): EBody[] {
-        for (const def of json.fixtures) {
-            const f = this._fixtureSerializer.deserialize(def);
-            this._fixtureDefMapper.referStrict(def.param.self.param.id, f);
+        if (json.type !== box2DType) {
+            throw new Error(`invalid type. (expected = ${box2DType}, actual = ${json.type})`);
         }
-        const bodies = json.bodies.map(obj => this._eBodySerializer.deserialize(obj));
-        // m_tree.m_freeList.userData に入っているような fixture は b2body から削除されているため上記では _fixtureMapper に登録されない
-        for (const [id, def] of this._fixtureDefMapper._refToObject.entries()) {
-            if (!this._fixtureMapper._refToObject.get(id)) {
-                this._fixtureMapper.referStrict(id, toFixture(def));
-            }
-        }
-        this._box2d.world.m_contactManager.m_broadPhase.m_tree = this._dynamicTreeSerializer.deserialize(json.contactManager.broadPhase.tree);
-        for (const def of json.contactList.contactEdges) {
-            const e = this._contactEdgeSerializer.deserialize(def);
-            this._contactEdgeMapper.referStrict(def.param.self.param.id, e);
-        }
-        for (const def of json.contactList.contactEdges) {
-            const e = this._contactEdgeMapper.resolve(def.param.self);
-            if (def.param.next) {
-                e.next = this._contactEdgeMapper.resolve(def.param.next);
-            }
-            if (def.param.prev) {
-                e.prev = this._contactEdgeMapper.resolve(def.param.prev);
-            }
-        }
-        for (const def of json.contactList.contacts) {
-            const c = this._contactSerializer.deserialize(def);
-            c.m_nodeA.contact = c;
-            c.m_nodeB.contact = c;
-            this._contactMapper.referStrict(def.param.self.param.id, c);
-        }
-        for (const def of json.contactList.contacts) {
-            const c = this._contactMapper.resolve(def.param.self);
-            if (def.param.next) {
-                c.m_next = this._contactMapper.resolve(def.param.next);
-            }
-            if (def.param.prev) {
-                c.m_prev = this._contactMapper.resolve(def.param.prev);
-            }
-        }
-        this._box2d.world.m_contactCount = json.contactList.contacts.length;
-        (this._box2d as any)._createBodyCount = json.ebodyCount;
-        this._cleanup();
-        return bodies;
+        const { resolveAfter } = this._box2dMerger.merge(json, this._box2d);
+        this._referredStoreDeserializer.deserialize(json.param.pool);
+        resolveAfter();
+        this._unresolverChecker.validate();
+        this._cleanupResolver();
+        return this._box2d.bodies;
     }
 
     /**
@@ -692,15 +923,33 @@ export class Box2DSerializer {
     }
 
     /**
-     * 繰り返し serialize/deserialize すると、前回の参照が残ってしまって削除された要素を参照する可能性がある。
-     * そのため、 serialize/deserialize ごとにキャッシュを削除する。
+     * 繰り返し serialize すると、前回の参照が残ってしまって削除された要素を参照する可能性がある。
+     * そのため、 serialize ごとにキャッシュを削除する。
      */
-    _cleanup(): void {
-        this._fixtureMapper.clear();
-        this._fixtureDefMapper.clear();
-        this._dynamicTreeNodeMapper.clear();
-        this._bodyMapper.clear();
-        this._contactMapper.clear();
-        this._contactEdgeMapper.clear();
+    _cleanupStore(): void {
+        this._bodyStore.clear();
+        this._fixtureStore.clear();
+        this._dynamicTreeNodeStore.clear();
+        this._dynamicTreePairStore.clear();
+        this._contactStore.clear();
+        this._contactEdgeStore.clear();
+        this._dynamicTreeScanner.clear();
+        this._dynamicTreeBroadPhaseScanner.clear();
+        this._contactManagerScanner.clear();
+        this._worldScanner.clear();
+        this._box2dScanner.clear();
+    }
+
+    /**
+     * 繰り返し deserialize すると、前回の参照が残ってしまって削除された要素を参照する可能性がある。
+     * そのため、 deserialize ごとにキャッシュを削除する。
+     */
+    _cleanupResolver(): void {
+        this._bodyResolver.clear();
+        this._fixtureResolver.clear();
+        this._dynamicTreeNodeResolver.clear();
+        this._contactResolver.clear();
+        this._contactEdgeResolver.clear();
+        this._unresolverChecker.clear();
     }
 }

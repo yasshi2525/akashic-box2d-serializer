@@ -1,12 +1,13 @@
 import { Box2D, Box2DWeb } from "@akashic-extension/akashic-box2d";
-import { ShapeSerializer } from "../../src/serializerShape";
-import { CircleShapeSerializer, circleShapeType } from "../../src/serializerShapeCircle";
-import { PolygonShapeSerializer, polygonShapeType } from "../../src/serializerShapePolygon";
-import { Vec2Serializer } from "../../src/serializerVec2";
+import { CircleShapeSerializer, circleShapeType, PolygonShapeSerializer, polygonShapeType, ShapeSerializer } from "../../src/serialize/shape";
+import { CircleShapeDeserializer, PolygonShapeDeserializer, ShapeDeserializer } from "../../src/deserialize/shape";
+import { Vec2Serializer } from "../../src/serialize/vec2";
+import { Vec2Deserializer } from "../../src/deserialize/vec2";
 
 describe("ShapeSerializer", () => {
     let box2d: Box2D;
     let serializer: ShapeSerializer;
+    let deserializer: ShapeDeserializer;
 
     beforeEach(() => {
         box2d = new Box2D({
@@ -14,23 +15,17 @@ describe("ShapeSerializer", () => {
             scale: 10,
         });
         serializer = new ShapeSerializer({
-            circleShapeSerializer: new CircleShapeSerializer(),
-            polygonShapeSerializer: new PolygonShapeSerializer({
-                vec2Serializer: new Vec2Serializer(),
+            circle: new CircleShapeSerializer(),
+            polygon: new PolygonShapeSerializer({
+                vec2: new Vec2Serializer(),
             }),
         });
-    });
-
-    it("set matched param (circle)", () => {
-        const circle = new Box2DWeb.Collision.Shapes.b2CircleShape(10);
-        const json = serializer.serialize(circle);
-        expect(serializer.filter(json.type)).toBe(true);
-    });
-
-    it("set matched param (polygon)", () => {
-        const polygon = new Box2DWeb.Collision.Shapes.b2PolygonShape();
-        const json = serializer.serialize(polygon);
-        expect(serializer.filter(json.type)).toBe(true);
+        deserializer = new ShapeDeserializer({
+            circle: new CircleShapeDeserializer(),
+            polygon: new PolygonShapeDeserializer({
+                vec2: new Vec2Deserializer(),
+            }),
+        });
     });
 
     it("can serialize circle", () => {
@@ -55,19 +50,19 @@ describe("ShapeSerializer", () => {
     it("can deserialize circle", () => {
         const circle = box2d.createCircleShape(10);
         const json = serializer.serialize(circle);
-        const object = serializer.deserialize(json);
+        const object = deserializer.deserialize(json).value;
         expect(object.GetType()).toBe(Box2DWeb.Collision.Shapes.b2Shape.e_circleShape);
     });
 
     it("can deserialize polygon", () => {
         const rect = box2d.createRectShape(50, 50);
         const json = serializer.serialize(rect);
-        const object = serializer.deserialize(json);
+        const object = deserializer.deserialize(json).value;
         expect(object.GetType()).toBe(Box2DWeb.Collision.Shapes.b2Shape.e_polygonShape);
     });
 
     it("throws for unsupported shape on deserialize", () => {
         const unknownParam = { type: "unknown", param: { vertices: [] } };
-        expect(() => serializer.deserialize(unknownParam)).toThrow();
+        expect(() => deserializer.deserialize(unknownParam).value).toThrow();
     });
 });

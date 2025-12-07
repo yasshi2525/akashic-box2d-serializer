@@ -1,60 +1,72 @@
 import { Box2DWeb } from "@akashic-extension/akashic-box2d";
-import { ObjectMapper } from "../../src/objectMapper";
-import { AABBSerializer } from "../../src/serializerAABB";
-import { dynamicTreeNodeRefType, DynamicTreeNodeSerializer, dynamicTreeNodeType } from "../../src/serializerTreeNodeDynamic";
-import { Vec2Serializer } from "../../src/serializerVec2";
-import { fixtureRefType } from "../../src/serializerFixture";
+import { ObjectStore, toRefTypeName } from "../../src/scan/store";
+import { DynamicTreeNodeScanner } from "../../src/scan/treeNode";
+import { DynamicTreeNodeSerializer, dynamicTreeNodeType } from "../../src/serialize/treeNode";
+import { FixtureSerializer } from "../../src/serialize/fixture";
+import { AABBSerializer } from "../../src/serialize/aabb";
+import { ObjectResolver } from "../../src/deserialize/resolver";
+import { FixtureDeserializedPayload, FixtureDeserializer } from "../../src/deserialize/fixture";
+import { DynamicTreeNodeDeserializedPayload, DynamicTreeNodeDeserializer } from "../../src/deserialize/treeNode";
+import { createBox2DWebDeserializers, createBox2DWebSerializers, createEmptyWorld } from "./utils";
+import { UnresolverChecker } from "../../src/deserialize/checker";
 
 describe("DynamicTreeNodeSerializer", () => {
+    let store: ObjectStore<Box2DWeb.Collision.b2DynamicTreeNode>;
+    let fixtureStore: ObjectStore<Box2DWeb.Dynamics.b2Fixture>;
+    let scanner: DynamicTreeNodeScanner;
     let serializer: DynamicTreeNodeSerializer;
     let aabbSerializer: AABBSerializer;
-    let selfMapper: ObjectMapper<Box2DWeb.Collision.b2DynamicTreeNode>;
-    let userDataMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
+    let fixtureSerializer: FixtureSerializer;
+
+    let checker: UnresolverChecker;
+    let resolver: ObjectResolver<DynamicTreeNodeDeserializedPayload>;
+    let fixtureResolver: ObjectResolver<FixtureDeserializedPayload>;
+    let deserializer: DynamicTreeNodeDeserializer;
+    let fixtureDeserializer: FixtureDeserializer;
 
     beforeEach(() => {
-        aabbSerializer = new AABBSerializer({
-            vec2Serializer: new Vec2Serializer(),
-        });
-        selfMapper = new ObjectMapper({
-            refTypeName: dynamicTreeNodeRefType,
-        });
-        userDataMapper = new ObjectMapper({
-            refTypeName: fixtureRefType,
-        });
-        serializer = new DynamicTreeNodeSerializer({
-            aabbSerializer,
-            selfMapper,
-            userDataMapper,
-        });
-    });
-
-    it("set matched param", () => {
-        const node = new Box2DWeb.Collision.b2DynamicTreeNode();
-        const json = serializer.serialize(node);
-        expect(serializer.filter(json.type)).toBe(true);
+        const ser = createBox2DWebSerializers();
+        store = ser.stores.node;
+        fixtureStore = ser.stores.fixture;
+        scanner = ser.scanners.node;
+        serializer = ser.serializers.node;
+        aabbSerializer = ser.serializers.aabb;
+        fixtureSerializer = ser.serializers.fixture;
+        const des = createBox2DWebDeserializers(createEmptyWorld());
+        checker = des.checker;
+        resolver = des.resolvers.node;
+        fixtureResolver = des.resolvers.fixture;
+        deserializer = des.deserializers.node;
+        fixtureDeserializer = des.deserializers.fixture;
     });
 
     it("can serialize default node", () => {
         const node = new Box2DWeb.Collision.b2DynamicTreeNode();
-        const json = serializer.serialize(node);
-        expect(selfMapper.objects()).toHaveLength(1);
+        scanner.scan(node);
+        const json = serializer.serialize(node, store.refer(node));
+        expect(store._store.size).toBe(1);
         expect(json.type).toBe(dynamicTreeNodeType);
+        expect(json.ref.type).toBe(toRefTypeName(dynamicTreeNodeType));
+        expect(json.ref).toEqual(store.refer(node));
         expect(json.param).toEqual({
-            self: selfMapper.refer(node),
             aabb: aabbSerializer.serialize(new Box2DWeb.Collision.b2AABB()),
+            parent: undefined,
             child1: undefined,
             child2: undefined,
             userData: undefined,
         });
-        expect(selfMapper.objects().length).toBe(1);
     });
 
     it("can deserialize default node", () => {
         const node = new Box2DWeb.Collision.b2DynamicTreeNode();
-        const json = serializer.serialize(node);
-        const object = serializer.deserialize(json);
-        expect(selfMapper.objects()).toHaveLength(1);
+        scanner.scan(node);
+        const json = serializer.serialize(node, store.refer(node));
+        const [{ value: object, resolveAfter }] = resolver.deserialize([json], deserializer, deserializer.resolveSibling);
+        resolveAfter();
+        expect(store._store.size).toBe(1);
+        expect(resolver._table.size).toBe(1);
         expect(object).toEqual(node);
+        expect(() => checker.validate()).not.toThrow();
     });
 
     it("can serialize default node with userData", () => {
@@ -62,19 +74,19 @@ describe("DynamicTreeNodeSerializer", () => {
         const node = new Box2DWeb.Collision.b2DynamicTreeNode();
         node.userData = fixture;
         fixture.m_proxy = node;
-        const json = serializer.serialize(node);
-        expect(selfMapper.objects()).toHaveLength(1);
-        expect(userDataMapper.objects()).toHaveLength(1);
+        scanner.scan(node);
+        const json = serializer.serialize(node, store.refer(node));
+        expect(store._store.size).toBe(1);
+        expect(fixtureStore._store.size).toBe(1);
         expect(json.type).toBe(dynamicTreeNodeType);
+        expect(json.ref.type).toBe(toRefTypeName(dynamicTreeNodeType));
         expect(json.param).toEqual({
-            self: selfMapper.refer(node),
             aabb: aabbSerializer.serialize(new Box2DWeb.Collision.b2AABB()),
+            parent: undefined,
             child1: undefined,
             child2: undefined,
-            userData: userDataMapper.refer(fixture),
+            userData: fixtureStore.refer(fixture),
         });
-        expect(selfMapper.objects()).toHaveLength(1);
-        expect(userDataMapper.objects()).toHaveLength(1);
     });
 
     it("can deserialize default node with userData", () => {
@@ -82,10 +94,18 @@ describe("DynamicTreeNodeSerializer", () => {
         const node = new Box2DWeb.Collision.b2DynamicTreeNode();
         node.userData = fixture;
         fixture.m_proxy = node;
-        const json = serializer.serialize(node);
-        const object = serializer.deserialize(json);
-        expect(selfMapper.objects()).toHaveLength(1);
-        expect(userDataMapper.objects()).toHaveLength(1);
+        scanner.scan(node);
+        const json = serializer.serialize(node, store.refer(node));
+        const fixtureJson = fixtureSerializer.serialize(fixture, fixtureStore.refer(fixture));
+        const [{ resolveAfter: resolveAfterFixture }] = fixtureResolver.deserialize([fixtureJson], fixtureDeserializer, fixtureDeserializer.resolveSibling);
+        const [{ value: object, resolveAfter }] = resolver.deserialize([json], deserializer, deserializer.resolveSibling);
+        resolveAfterFixture();
+        resolveAfter();
+        expect(store._store.size).toBe(1);
+        expect(fixtureStore._store.size).toBe(1);
+        expect(resolver._table.size).toBe(1);
+        expect(fixtureResolver._table.size).toBe(1);
         expect(object).toEqual(node);
+        expect(() => checker.validate()).not.toThrow();
     });
 });

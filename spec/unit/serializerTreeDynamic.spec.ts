@@ -1,44 +1,48 @@
 import { Box2DWeb } from "@akashic-extension/akashic-box2d";
-import { ObjectMapper, RefParam } from "../../src/objectMapper";
-import { AABBSerializer } from "../../src/serializerAABB";
-import { DynamicTreeSerializer, dynamicTreeType } from "../../src/serializerTreeDynamic";
-import { DynamicTreeNodeParam, dynamicTreeNodeRefType, DynamicTreeNodeSerializer } from "../../src/serializerTreeNodeDynamic";
-import { Vec2Serializer } from "../../src/serializerVec2";
-import { fixtureRefType } from "../../src/serializerFixture";
-import { ObjectDef } from "../../src/serializerObject";
+import { ObjectDef, RefParam } from "../../src/serializerObject";
+import { ReferableObjectDef } from "../../src/serialize/serializable";
+import { FixtureSerializer } from "../../src/serialize/fixture";
+import { DynamicTreeNodeSerializer } from "../../src/serialize/treeNode";
+import { DynamicTreeSerializer, dynamicTreeType } from "../../src/serialize/tree";
+import { ObjectStore } from "../../src/scan/store";
+import { DynamicTreeScanner } from "../../src/scan/tree";
+import { DynamicTreeNodeParam } from "../../src/param/treeNode";
+import { UnresolverChecker } from "../../src/deserialize/checker";
+import { ObjectResolver } from "../../src/deserialize/resolver";
+import { DynamicTreeDeserializer } from "../../src/deserialize/tree";
+import { DynamicTreeNodeDeserializedPayload, DynamicTreeNodeDeserializer } from "../../src/deserialize/treeNode";
+import { FixtureDeserializedPayload, FixtureDeserializer } from "../../src/deserialize/fixture";
+import { createBox2DWebDeserializers, createBox2DWebSerializers, createEmptyWorld, expectToShallowEqualDynamicTree } from "./utils";
 
 describe("DynamicTreeNodeSerializer", () => {
+    let scanner: DynamicTreeScanner;
     let serializer: DynamicTreeSerializer;
-    let deserializer: DynamicTreeSerializer;
-    let nodeMapper: ObjectMapper<Box2DWeb.Collision.b2DynamicTreeNode>;
     let nodeSerializer: DynamicTreeNodeSerializer;
-    let userDataMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
+    let fixtureSerializer: FixtureSerializer;
+    let nodeStore: ObjectStore<Box2DWeb.Collision.b2DynamicTreeNode>;
+    let fixtureStore: ObjectStore<Box2DWeb.Dynamics.b2Fixture>;
+    let deserializer: DynamicTreeDeserializer;
+    let nodeDeserializer: DynamicTreeNodeDeserializer;
+    let fixtureDeserializer: FixtureDeserializer;
+    let nodeResolver: ObjectResolver<DynamicTreeNodeDeserializedPayload>;
+    let fixtureResolver: ObjectResolver<FixtureDeserializedPayload>;
+    let checker: UnresolverChecker;
 
     beforeEach(() => {
-        nodeMapper = new ObjectMapper({
-            refTypeName: dynamicTreeNodeRefType,
-        });
-        userDataMapper = new ObjectMapper({
-            refTypeName: fixtureRefType,
-        });
-        nodeSerializer = new DynamicTreeNodeSerializer({
-            aabbSerializer: new AABBSerializer({
-                vec2Serializer: new Vec2Serializer(),
-            }),
-            selfMapper: nodeMapper,
-            userDataMapper,
-        });
-        serializer = new DynamicTreeSerializer({
-            nodeSerializer,
-            nodeMapper,
-        });
-        // serializer を つかって deserialize すると nodeMapper を共有するため、結果に不整合がでる
-        deserializer = new DynamicTreeSerializer({
-            nodeSerializer,
-            nodeMapper: new ObjectMapper({
-                refTypeName: dynamicTreeNodeRefType,
-            }),
-        });
+        const ser = createBox2DWebSerializers();
+        scanner = ser.scanners.tree;
+        serializer = ser.serializers.tree;
+        nodeSerializer = ser.serializers.node;
+        fixtureSerializer = ser.serializers.fixture;
+        nodeStore = ser.stores.node;
+        fixtureStore = ser.stores.fixture;
+        const des = createBox2DWebDeserializers(createEmptyWorld());
+        checker = des.checker;
+        deserializer = des.deserializers.tree;
+        nodeDeserializer = des.deserializers.node;
+        fixtureDeserializer = des.deserializers.fixture;
+        nodeResolver = des.resolvers.node;
+        fixtureResolver = des.resolvers.fixture;
     });
 
     const createCustomTree = () => {
@@ -60,52 +64,36 @@ describe("DynamicTreeNodeSerializer", () => {
         return { tree, nodes };
     };
 
-    const expectToEqualsNodeRef = (list: ObjectDef<DynamicTreeNodeParam>[], expectedRef: ObjectDef<RefParam>, object: Box2DWeb.Collision.b2DynamicTreeNode) => {
-        const expected = list.find(n => n.param.self.param.id === expectedRef.param.id)!;
-        expect(expected.param.self).toEqual(nodeMapper.refer(object));
+    const expectToEqualsNodeRef = (list: ReferableObjectDef<DynamicTreeNodeParam>[], expectedRef: ObjectDef<RefParam>, object: Box2DWeb.Collision.b2DynamicTreeNode) => {
+        const expected = list.find(n => n.ref.param.id === expectedRef.param.id)!;
+        expect(expected.ref).toEqual(nodeStore.refer(object));
         if (object.userData) {
-            expect(expected.param.userData).toEqual(userDataMapper.refer(object.userData));
+            expect(expected.param.userData).toEqual(fixtureStore.refer(object.userData));
         }
         if (object.child1) {
             expect(expected.param.child1).toBeDefined();
-            expect(expected.param.child1).toEqual(nodeMapper.refer(object.child1));
+            expect(expected.param.child1).toEqual(nodeStore.refer(object.child1));
             expectToEqualsNodeRef(list, expected.param.child1!, object.child1);
         }
         if (object.child2) {
             expect(expected.param.child2).toBeDefined();
-            expect(expected.param.child2).toEqual(nodeMapper.refer(object.child2));
+            expect(expected.param.child2).toEqual(nodeStore.refer(object.child2));
             expectToEqualsNodeRef(list, expected.param.child2!, object.child2);
         }
     };
 
-    const expectToEqualsNode = (received: Box2DWeb.Collision.b2DynamicTreeNode, expected: Box2DWeb.Collision.b2DynamicTreeNode) => {
-        expect(received.aabb).toEqual(expected.aabb);
-        // userData.m_proxy があると tree を辿ってしまい、toEquals() で fail してしまうので一時的に消す
-        const receivedProxy = received.userData?.m_proxy;
-        const expectedProxy = expected.userData?.m_proxy;
-        if (received.userData) {
-            expect(expected.userData).toBeTruthy();
-            delete received.userData.m_proxy;
-            delete expected.userData!.m_proxy;
-            expect(received.userData).toEqual(expected.userData);
-            received.userData.m_proxy = receivedProxy;
-            expected.userData!.m_proxy = expectedProxy;
+    const preDeserialize = () => {
+        const nodeJSON = nodeStore.dump(nodeSerializer);
+        const fixtureJSON = fixtureStore.dump(fixtureSerializer);
+        const nps = nodeResolver.deserialize(nodeJSON, nodeDeserializer, nodeDeserializer.resolveSibling);
+        const fps = fixtureResolver.deserialize(fixtureJSON, fixtureDeserializer, fixtureDeserializer.resolveSibling);
+        for (const np of nps) {
+            np.resolveAfter();
         }
-        if (received.child1) {
-            expectToEqualsNode(received.child1, expected.child1!);
-            expect(received.child1.parent).toBe(received);
-        }
-        if (received.child2) {
-            expectToEqualsNode(received.child2, expected.child2!);
-            expect(received.child2.parent).toBe(received);
+        for (const fp of fps) {
+            fp.resolveAfter();
         }
     };
-
-    it("set matched param", () => {
-        const tree = new Box2DWeb.Collision.b2DynamicTree();
-        const json = serializer.serialize(tree);
-        expect(serializer.filter(json.type)).toBe(true);
-    });
 
     it("can serialize tree", () => {
         const { tree, nodes } = createCustomTree();
@@ -114,6 +102,7 @@ describe("DynamicTreeNodeSerializer", () => {
             userData: null,
             parent: null,
         });
+        scanner.scan(tree);
         const json = serializer.serialize(tree);
         expect(json.type).toBe(dynamicTreeType);
         expect(json.param).toMatchObject({
@@ -121,9 +110,10 @@ describe("DynamicTreeNodeSerializer", () => {
             path: tree.m_path,
             insertionCount: tree.m_insertionCount,
         });
-        expect(json.param.root).toEqual(nodeMapper.refer(tree.m_root!));
-        expectToEqualsNodeRef(json.param.nodeList, json.param.root!, tree.m_root!);
-        expect(nodeMapper.objects()).toHaveLength(nodes.length + 2);
+        expect(json.param.root).toEqual(nodeStore.refer(tree.m_root!));
+        const nodeList = [...nodeStore._store.keys()].map(n => nodeSerializer.serialize(n, nodeStore.refer(n)));
+        expectToEqualsNodeRef(nodeList, json.param.root!, tree.m_root!);
+        expect(nodeStore._store.size).toBe(nodes.length + 2);
     });
 
     it("can deserialize tree", () => {
@@ -133,22 +123,30 @@ describe("DynamicTreeNodeSerializer", () => {
                 expect(node.userData?.m_proxy).toBeDefined();
             }
         }
+        scanner.scan(tree);
         const json = serializer.serialize(tree);
-        const object = deserializer.deserialize(json);
+        preDeserialize();
+        const { value: object, resolveAfter } = deserializer.deserialize(json);
+        resolveAfter();
         expect(object).toMatchObject({
             m_freeList: tree.m_freeList,
             m_path: tree.m_path,
             m_insertionCount: tree.m_insertionCount,
         });
-        expectToEqualsNode(object.m_root!, tree.m_root!);
+        expectToShallowEqualDynamicTree(object, tree);
+        expect(() => checker.validate()).not.toThrow();
     });
 
     it("can deserialize tree with freeList", () => {
         const { tree, nodes } = createCustomTree();
         tree.m_freeList = nodes[nodes.length - 1];
+        scanner.scan(tree);
         const json = serializer.serialize(tree);
-        const object = deserializer.deserialize(json);
+        preDeserialize();
+        const { value: object, resolveAfter } = deserializer.deserialize(json);
+        resolveAfter();
         expect(object.m_freeList).toBeTruthy();
-        expectToEqualsNode(object.m_freeList!, tree.m_freeList!);
+        expectToShallowEqualDynamicTree(object, tree);
+        expect(() => checker.validate()).not.toThrow();
     });
 });

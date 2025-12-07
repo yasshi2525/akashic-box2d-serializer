@@ -12,6 +12,10 @@ export interface ObjectDef<T> {
     param: T;
 }
 
+export interface RefParam {
+    id: number;
+}
+
 /**
  * 特定のオブジェクトをJSONに直列化したり、直列化したJSONから復元したりします。
  * @template O 直列化対象のオブジェクト型

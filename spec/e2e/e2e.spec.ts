@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import { GameClient, GameContext } from "@akashic/headless-akashic";
-import { expectShallowEqualsBodies } from "./utils";
+import { expectShallowEqualsBodies, expectShallowEqualsWorld } from "./utils";
 
 describe("e2e", () => {
     let context: GameContext<3>;
@@ -17,6 +17,7 @@ describe("e2e", () => {
         expect(activeInstance.game.vars.tick).toBe(0);
         expect(activeInstance.game.vars.bodies).toHaveLength(0);
         expect(activeInstance.game.vars.requestSnapshotCount).toBe(0);
+        expect(activeInstance.game.vars.world).toBeTruthy();
     });
 
     it("should count up snapshot after few mintues", async () => {
@@ -36,6 +37,7 @@ describe("e2e", () => {
             passiveInstance.game.vars.bodies,
             activeInstance.game.vars.bodies
         );
+        expectShallowEqualsWorld(passiveInstance.game.vars.world, activeInstance.game.vars.world);
     });
 
     it("restore by snapshot (litte after snapshot)", async () => {
@@ -55,6 +57,7 @@ describe("e2e", () => {
             passiveInstance.game.vars.bodies,
             activeInstance.game.vars.bodies
         );
+        expectShallowEqualsWorld(passiveInstance.game.vars.world, activeInstance.game.vars.world);
     });
 
     it("synchronize all clients (without snapshot)", async () => {
@@ -67,6 +70,7 @@ describe("e2e", () => {
             passiveInstance.game.vars.bodies,
             activeInstance.game.vars.bodies
         );
+        expectShallowEqualsWorld(passiveInstance.game.vars.world, activeInstance.game.vars.world);
     });
 
     it("synchronize all clients (with snapshot)", async () => {
@@ -84,6 +88,7 @@ describe("e2e", () => {
             passiveInstance.game.vars.bodies,
             activeInstance.game.vars.bodies
         );
+        expectShallowEqualsWorld(passiveInstance.game.vars.world, activeInstance.game.vars.world);
     });
 
     afterEach(async () => {

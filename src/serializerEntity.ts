@@ -1,10 +1,6 @@
 import { PlainMatrixParam, PlainMatrixSerializer } from "./serializerMatrixPlain";
 import { ObjectDef, ObjectSerializer } from "./serializerObject";
-
-/**
- * g.E オブジェクト型の識別子
- */
-export const entityType = "E";
+import { entityType, resolveEntityName } from "./serialize/entityType";
 
 /**
  * 直列化したときの parent の値の型
@@ -125,7 +121,7 @@ export class EntitySerializer implements ObjectSerializer<g.E, EntityParam> {
 
     _serializeChildren(children: g.E["children"]): undefined | ObjectDef<EntityParam>[] {
         if (children) {
-            return children.map(c => this._findEntitySerializer(c.constructor.name).serialize(c));
+            return children.map(c => this._findEntitySerializer(resolveEntityName(c)).serialize(c));
         }
         return undefined;
     }

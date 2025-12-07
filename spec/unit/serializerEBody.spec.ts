@@ -1,37 +1,25 @@
 import { Box2D, Box2DWeb, EBody, BodyType, Box2DParameter } from "@akashic-extension/akashic-box2d";
-import { EBodySerializer, ebodyType } from "../../src/serializerEbody";
-import { createDefaultEntityParam, extractSerializedEntityParam, expectToShallowEqualBody, toExpectedEntity } from "./utils";
+import { createDefaultEntityParam, extractSerializedEntityParam, expectToShallowEqualBody, toExpectedEntity, createBox2DWebSerializers, createBox2DWebDeserializers } from "./utils";
 import { EntitySerializer } from "../../src/serializerEntity";
-import { bodyRefType, BodySerializer } from "../../src/serializerBody";
-import { fixtureRefType, FixtureSerializer } from "../../src/serializerFixture";
-import { FilterDataSerializer } from "../../src/serializerFilterData";
-import { ShapeSerializer } from "../../src/serializerShape";
-import { CircleShapeSerializer } from "../../src/serializerShapeCircle";
-import { PolygonShapeSerializer } from "../../src/serializerShapePolygon";
-import { Vec2Serializer } from "../../src/serializerVec2";
-import { SweepSerializer } from "../../src/serializerSweep";
 import { PlainMatrixSerializer } from "../../src/serializerMatrixPlain";
-import { TransformSerializer } from "../../src/serializerTransform";
-import { Mat22Serializer } from "../../src/serializerMat22";
-import { ObjectMapper } from "../../src/objectMapper";
+import { EBodySerializer, ebodyType } from "../../src/serialize/ebody";
+import { EBodyScanner } from "../../src/scan/ebody";
+import { EBodyDeserializer } from "../../src/deserialize/ebody";
 
 describe("EBodySerializer", () => {
     let box2d: Box2D;
     let targetBox2D: Box2D;
     let serializer: EBodySerializer;
-    let bodySerializer: BodySerializer;
+    let deserializer: EBodyDeserializer;
     let entitySerializer: EntitySerializer;
-    let sweepSerializer: SweepSerializer;
-    let vec2Serializer: Vec2Serializer;
-    let transformSerializer: TransformSerializer;
-    let fixtureSerializer: FixtureSerializer;
-    let fixtureMapper: ObjectMapper<Box2DWeb.Dynamics.b2Fixture>;
-    let fixtureDefMapper: ObjectMapper<Box2DWeb.Dynamics.b2FixtureDef>;
-    let bodyMapper: ObjectMapper<Box2DWeb.Dynamics.b2Body>;
+    let scanner: EBodyScanner;
     let ebody: EBody;
     let entityParam: g.EParameterObject;
     let bodyDef: Box2DWeb.Dynamics.b2BodyDef;
     let fixtureDefs: Box2DWeb.Dynamics.b2FixtureDef[];
+    let ser: ReturnType<typeof createBox2DWebSerializers>;
+    let des: ReturnType<typeof createBox2DWebDeserializers>;
+
     beforeEach(() => {
         const box2dParam: Box2DParameter = {
             gravity: [0, -9.8],
@@ -39,7 +27,11 @@ describe("EBodySerializer", () => {
         };
         box2d = new Box2D(box2dParam);
         targetBox2D = new Box2D(box2dParam);
-
+        ser = createBox2DWebSerializers();
+        scanner = new EBodyScanner({
+            body: ser.scanners.body,
+        });
+        des = createBox2DWebDeserializers(targetBox2D.world);
         const entitySerializers: EntitySerializer[] = [];
         entitySerializer = new EntitySerializer({
             scene: targetScene,
@@ -47,54 +39,17 @@ describe("EBodySerializer", () => {
             plainMatrixSerializer: new PlainMatrixSerializer(),
         });
         entitySerializers.push(entitySerializer);
-        fixtureMapper = new ObjectMapper({
-            refTypeName: fixtureRefType,
-        });
-        fixtureDefMapper = new ObjectMapper({
-            refTypeName: fixtureRefType,
-        });
-        bodyMapper = new ObjectMapper({
-            refTypeName: bodyRefType,
-        });
-        vec2Serializer = new Vec2Serializer();
-        fixtureSerializer = new FixtureSerializer({
-            filterDataSerializer: new FilterDataSerializer(),
-            shapeSerializer: new ShapeSerializer({
-                circleShapeSerializer: new CircleShapeSerializer(),
-                polygonShapeSerializer: new PolygonShapeSerializer({
-                    vec2Serializer,
-                }),
-            }),
-            selfMapper: fixtureMapper,
-        });
-        bodySerializer = new BodySerializer({
-            vec2Serializer,
-            fixtureMapper,
-            selfMapper: bodyMapper,
-        });
-        sweepSerializer = new SweepSerializer({
-            vec2Serializer,
-        });
-        transformSerializer = new TransformSerializer({
-            mat22Serializer: new Mat22Serializer({
-                vec2Serializer,
-            }),
-            vec2Serializer,
-        });
         serializer = new EBodySerializer({
-            box2d: targetBox2D,
-            entitySerializers,
-            bodySerializer,
-            fixtureSerializer,
-            sweepSerializer,
-            vec2Serializer,
-            transformSerializer,
-            fixtureMapper,
-            fixtureDefMapper,
-            bodyMapper,
+            entities: entitySerializers,
+            body: ser.stores.body,
+        });
+        deserializer = new EBodyDeserializer({
+            checker: des.checker,
+            entities: entitySerializers,
+            body: des.resolvers.body,
         });
         entityParam = {
-            ...createDefaultEntityParam(),
+            ...createDefaultEntityParam(scene),
             parent: scene,
         };
         bodyDef = box2d.createBodyDef({
@@ -112,24 +67,31 @@ describe("EBodySerializer", () => {
         ebody = box2d.createBody(new g.E(entityParam), bodyDef, fixtureDefs)!;
     });
 
-    it("set matched param", () => {
-        const json = serializer.serialize(ebody);
-        expect(serializer.filter(json.type)).toBe(true);
-    });
+    const preDeserialize = () => {
+        const bodyJson = ser.stores.body.dump(ser.serializers.body);
+        const nodeJson = ser.stores.node.dump(ser.serializers.node);
+        const fixtureJson = ser.stores.fixture.dump(ser.serializers.fixture);
+        const bps = des.resolvers.body.deserialize(bodyJson, des.deserializers.body, des.deserializers.body.resolveSibling);
+        const nps = des.resolvers.node.deserialize(nodeJson, des.deserializers.node, des.deserializers.node.resolveSibling);
+        const fps = des.resolvers.fixture.deserialize(fixtureJson, des.deserializers.fixture, des.deserializers.fixture.resolveSibling);
+        for (const bp of bps) {
+            bp.resolveAfter();
+        }
+        for (const np of nps) {
+            np.resolveAfter();
+        }
+        for (const fp of fps) {
+            fp.resolveAfter();
+        }
+    };
 
     it("can serialize ebody", () => {
+        scanner.scan(ebody);
         const json = serializer.serialize(ebody);
         expect(json.type).toBe(ebodyType);
-        expect(fixtureMapper.objects()).toHaveLength(2);
-        expect(fixtureDefMapper.objects()).toHaveLength(0);
+        expect(ser.stores.fixture._store.size).toBe(2);
         expect(json.param).toEqual({
-            b2body: {
-                def: bodySerializer.serialize(ebody.b2Body),
-                sweep: sweepSerializer.serialize(ebody.b2Body.m_sweep),
-                force: vec2Serializer.serialize(ebody.b2Body.m_force),
-                torque: ebody.b2Body.m_torque,
-                m_xf: transformSerializer.serialize(ebody.b2Body.m_xf),
-            },
+            b2body: ser.stores.body.refer(ebody.b2Body),
             entity: {
                 type: g.E.name,
                 param: {
@@ -146,37 +108,43 @@ describe("EBodySerializer", () => {
     });
 
     it("can serialize interacted ebody", async () => {
+        scanner.scan(ebody);
         const initialJson = serializer.serialize(ebody);
+        const initialBbodyJson = ser.serializers.body.serialize(ebody.b2Body, ser.stores.body.refer(ebody.b2Body));
         expect(initialJson.param.entity.param.x).toBe(0);
-        expect(initialJson.param.b2body.def.param.linearVelocity.param.x).toBe(0);
+        expect(initialBbodyJson.param.linearVelocity.param.x).toBe(0);
         ebody.b2Body.ApplyForce(box2d.vec2(3, 4), box2d.vec2(0.1, 0.2));
         box2d.step(10);
         await step();
+        scanner.scan(ebody);
         const json = serializer.serialize(ebody);
+        const bodyJson = ser.serializers.body.serialize(ebody.b2Body, ser.stores.body.refer(ebody.b2Body));
         expect(json.param.entity.param.x).not.toBe(0);
-        expect(json.param.b2body.def.param.linearVelocity.param.x).not.toBe(0);
+        expect(bodyJson.param.linearVelocity.param.x).not.toBe(0);
     });
 
     it("can deserialize ebody", () => {
+        scanner.scan(ebody);
         const json = serializer.serialize(ebody);
-        for (const [id, f] of fixtureMapper._refToObject.entries()) {
-            fixtureDefMapper.referStrict(id, fixtureSerializer.deserialize(fixtureSerializer.serialize(f)));
-        }
-        const object = serializer.deserialize(json);
+        preDeserialize();
+        const { value: object, resolveAfter } = deserializer.deserialize(json);
+        resolveAfter();
         expectToShallowEqualBody(object.b2Body, ebody.b2Body);
         expect(object.entity).toEqual(toExpectedEntity(ebody.entity, object.entity));
+        expect(() => des.checker.validate()).not.toThrow();
     });
 
     it("can deserialize interacted ebody", async () => {
         ebody.b2Body.ApplyForce(box2d.vec2(3, 4), box2d.vec2(0.1, 0.2));
         box2d.step(10);
         await step();
+        scanner.scan(ebody);
         const json = serializer.serialize(ebody);
-        for (const param of fixtureMapper.objects().map(f => fixtureSerializer.serialize(f))) {
-            fixtureDefMapper.refer(fixtureSerializer.deserialize(param));
-        }
-        const object = serializer.deserialize(json);
+        preDeserialize();
+        const { value: object, resolveAfter } = deserializer.deserialize(json);
+        resolveAfter();
         expectToShallowEqualBody(object.b2Body, ebody.b2Body);
         expect(object.entity).toEqual(toExpectedEntity(ebody.entity, object.entity));
+        expect(() => des.checker.validate()).not.toThrow();
     });
 });

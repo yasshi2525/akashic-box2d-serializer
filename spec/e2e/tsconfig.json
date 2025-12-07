@@ -9,7 +9,8 @@
   },
   "include": [
     "**/*.ts",
-    "../../typings/**/*.d.ts"
+    "../../typings/**/*.d.ts",
+    "../unit/utils.ts"
   ],
   "files": [
     "project/node_modules/@akashic/akashic-engine/index.runtime.d.ts",

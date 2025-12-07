@@ -2,7 +2,8 @@ import { GameClientCreateImageAssetParameterObject } from "@akashic/headless-aka
 import { EntitySerializer } from "../../src/serializerEntity";
 import { PlainMatrixSerializer } from "../../src/serializerMatrixPlain";
 import { ImageAssetSerializer, imageAssetType } from "../../src/serializerImageAsset";
-import { PaneSerializer, paneType } from "../../src/serializerPane";
+import { PaneSerializer } from "../../src/serializerPane";
+import { paneType } from "../../src/serialize/entityType";
 
 describe("PaneSerializer", () => {
     let serializer: PaneSerializer;

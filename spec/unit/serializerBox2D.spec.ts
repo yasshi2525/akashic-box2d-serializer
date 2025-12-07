@@ -1,6 +1,6 @@
 import { BodyType, Box2D, Box2DParameter, Box2DWeb } from "@akashic-extension/akashic-box2d";
 import { Box2DSerializer } from "../../src/serializerBox2D";
-import { expectToShallowEqualBody, expectToShallowEqualFixture, toExpectedEntity } from "./utils";
+import { expectToShallowEqualBody, expectToShallowEqualWorld, toExpectedEntity } from "./utils";
 
 describe("Box2DSerializer", () => {
     let serializer: Box2DSerializer;
@@ -108,41 +108,6 @@ describe("Box2DSerializer", () => {
         });
     });
 
-    const expectToEqualsNode = (received: Box2DWeb.Collision.b2DynamicTreeNode, expected: Box2DWeb.Collision.b2DynamicTreeNode) => {
-        expect(received.aabb).toEqual(expected.aabb);
-        if (expected.userData) {
-            expect(received.userData).toBeTruthy();
-            expectToShallowEqualFixture(received.userData!, expected.userData);
-        }
-        else {
-            expect(received.userData).toBeUndefined();
-        }
-        if (expected.child1) {
-            expect(received.child1).toBeTruthy();
-            expectToEqualsNode(received.child1!, expected.child1);
-        }
-        else {
-            expect(received.child1).toBeUndefined();
-        }
-        if (expected.child2) {
-            expect(received.child2).toBeTruthy();
-            expectToEqualsNode(received.child2!, expected.child2);
-        }
-        else {
-            expect(received.child2).toBeUndefined();
-        }
-    };
-
-    const expectToEqualsTree = (received: Box2DWeb.Collision.b2DynamicTree, expected: Box2DWeb.Collision.b2DynamicTree) => {
-        if (expected.m_root) {
-            expect(received.m_root).toBeTruthy();
-            expectToEqualsNode(received.m_root!, expected.m_root);
-        }
-        else {
-            expect(received.m_root).toBeNull();
-        }
-    };
-
     it("can serialize g.E", () => {
         const entity = new g.E({
             scene,
@@ -150,12 +115,12 @@ describe("Box2DSerializer", () => {
         });
         box2d.createBody(entity, bodyDef, fixtureDefs);
         const json = serializer.serializeBodies();
-        expect(json.bodies).toHaveLength(1);
-        expect(json.fixtures).toHaveLength(2);
-        expect(serializer._fixtureMapper.objects()).toHaveLength(0); // check cache is cleared.
-        expect(serializer._fixtureDefMapper.objects()).toHaveLength(0); // check cache is cleared.
-        expect(json.contactManager.broadPhase.tree).toBeDefined();
-        expect(serializer._dynamicTreeNodeMapper.objects()).toHaveLength(0); // check cache is cleared.
+        expect(json.param.bodies).toHaveLength(1);
+        expect(json.param.pool.param.bodies).toHaveLength(1 + 1); // + ground
+        expect(json.param.pool.param.fixtures).toHaveLength(2);
+        expect(serializer._fixtureStore._store.size).toBe(0); // check cache is cleared.
+        expect(json.param.world.param.contactManager.param.broadPhase).toBeDefined();
+        expect(serializer._dynamicTreeNodeStore._store.size).toBe(0); // check cache is cleared.
     });
 
     it("can deserialize g.E", () => {
@@ -168,13 +133,9 @@ describe("Box2DSerializer", () => {
         const ebody = deserializer.desrializeBodies(json);
         expect(ebody).toHaveLength(1);
         expect(ebody[0].entity).toEqual(toExpectedEntity(entity, ebody[0].entity));
-        expect(deserializer._fixtureDefMapper.objects()).toHaveLength(0); // check cache is cleared.
-        expect(deserializer._fixtureMapper.objects()).toHaveLength(0); // check cache is cleared.
-        expect(deserializer._dynamicTreeNodeMapper.objects()).toHaveLength(0); // check cache is cleared.
-        expectToEqualsTree(
-            targetBox2D.world.m_contactManager.m_broadPhase.m_tree,
-            box2d.world.m_contactManager.m_broadPhase.m_tree
-        );
+        expect(serializer._fixtureStore._store.size).toBe(0); // check cache is cleared.
+        expect(serializer._dynamicTreeNodeStore._store.size).toBe(0); // check cache is cleared.
+        expectToShallowEqualWorld(targetBox2D.world, box2d.world);
     });
 
     it("can deserialize g.FilledRect", () => {
@@ -741,6 +702,7 @@ describe("Box2DSerializer", () => {
         const json = serializer.serializeBodies();
         const object = deserializer.desrializeBodies(json);
         expect(object).toHaveLength(0);
+        expectToShallowEqualWorld(targetBox2D.world, box2d.world);
     });
 
     it("can deserialize after contact", () => {
@@ -766,9 +728,45 @@ describe("Box2DSerializer", () => {
         const json = serializer.serializeBodies();
         const object = deserializer.desrializeBodies(json);
         expect(object).toHaveLength(2);
+        expectToShallowEqualWorld(targetBox2D.world, box2d.world);
         box2d.step(10);
         targetBox2D.step(10);
         expectToShallowEqualBody(object[0].b2Body, fallen!.b2Body);
         expectToShallowEqualBody(object[1].b2Body, grand!.b2Body);
+        expectToShallowEqualWorld(targetBox2D.world, box2d.world);
+    });
+
+    it("can result in same by contact after deserialization", () => {
+        const fallen = box2d.createBody(
+            new g.E({ scene, parent: scene, y: 100 }),
+            box2d.createBodyDef({ type: BodyType.Dynamic }),
+            box2d.createFixtureDef({ density: 1, shape: box2d.createCircleShape(10) })
+        );
+        const grand = box2d.createBody(
+            new g.E({ scene, parent: scene, y: 900 }),
+            box2d.createBodyDef({ type: BodyType.Dynamic }),
+            box2d.createFixtureDef({ density: 1, shape: box2d.createRectShape(100, 50) })
+        );
+        fallen?.b2Body.ApplyForce(box2d.vec2(0, 110), fallen.b2Body.GetWorldCenter());
+        grand?.b2Body.ApplyForce(box2d.vec2(0, 110), grand.b2Body.GetWorldCenter());
+        while (box2d.world.m_contactCount === 0) {
+            box2d.step(1);
+        }
+        box2d.step(1);
+        box2d.step(1);
+        const json = serializer.serializeBodies();
+        const object = deserializer.desrializeBodies(json);
+        expectToShallowEqualWorld(targetBox2D.world, box2d.world);
+        for (let i = 0; i < 10; i++) {
+            box2d.step(1);
+            targetBox2D.step(1);
+        }
+        fallen?.b2Body.ApplyForce(box2d.vec2(0, -110), fallen.b2Body.GetWorldCenter());
+        grand?.b2Body.ApplyForce(box2d.vec2(0, -110), grand.b2Body.GetWorldCenter());
+        object[0].b2Body.ApplyForce(targetBox2D.vec2(0, -110), object[0].b2Body.GetWorldCenter());
+        object[1].b2Body.ApplyForce(targetBox2D.vec2(0, -110), object[1].b2Body.GetWorldCenter());
+        box2d.step(10);
+        targetBox2D.step(10);
+        expectToShallowEqualWorld(targetBox2D.world, box2d.world);
     });
 });

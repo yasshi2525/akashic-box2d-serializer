@@ -1,9 +1,10 @@
 import { GameClientCreateImageAssetParameterObject } from "@akashic/headless-akashic";
 import { EntitySerializer } from "../../src/serializerEntity";
-import { SpriteSerializer, spriteType } from "../../src/serializerSprite";
+import { SpriteSerializer } from "../../src/serializerSprite";
 import { PlainMatrixSerializer } from "../../src/serializerMatrixPlain";
 import { ImageAssetSerializer, imageAssetType } from "../../src/serializerImageAsset";
 import { toExpectedEntity } from "./utils";
+import { spriteType } from "../../src/serialize/entityType";
 
 describe("SpriteSerializer", () => {
     let serializer: SpriteSerializer;

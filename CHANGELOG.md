@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## v0.2.0
+
+* Bug Fixes
+  * 衝突が発生した後、正しくシリアライズ・デシリアライズされない問題を修正
+
+* Refactor
+  * 参照解決方法が複雑になりすぎたため、 `box2dweb` に関するシリアライズ・デシリアライズ処理をリファクタリング
+    * `Box2DSerializer` の API に変更なし (ただし、シリアライズスキーマ `Box2DBodiesParam` は大幅に変更)
+    * Akashic Engine のエンティティ関係の処理は変更なし
+    * `serializer**.ts` → `deserialize`, `merge`, `param`, `scan`, `serialize` に分割
+    * `ObjectMapper` → `ObjectStore` (シリアライズ用) と `ObjectResolver` (デシリアライズ用) に分割
+    * `RefParam`: `objectMapper.ts` → `serializerObject.ts`
+    * Akashic Engine ビルトインクラスの識別用名称変数 `**Type`: `serializer**.ts` → `serialize/entityType.ts`
+
+* Misc
+  * シリアライズ環境の Akashic Engine (`g`) が minify されていてもシリアライズされるよう修正
+
 ## v0.1.6
 
 * Bug Fixes
