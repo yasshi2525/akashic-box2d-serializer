@@ -7,6 +7,7 @@ import { frameSpriteType } from "./serialize/entityType";
  */
 export interface FrameSpriteParam extends SpriteParam, Required<Omit<g.FrameSpriteParameterObject, keyof g.SpriteParameterObject | "interval">> {
     interval: g.FrameSprite["interval"];
+    hasTimer: boolean;
 }
 
 /**
@@ -40,12 +41,16 @@ export class FrameSpriteSerializer extends SpriteSerializer implements ObjectSer
                 frames: object.frames,
                 interval: object.interval,
                 loop: object.loop,
+                hasTimer: !!object._timer,
             },
         };
     }
 
     override deserialize(json: ObjectDef<FrameSpriteParam>): g.FrameSprite {
         const frameSprite = new g.FrameSprite(this._deserializeParameterObject(json.param));
+        if (json.param.hasTimer) {
+            frameSprite.start();
+        }
         return frameSprite;
     }
 

@@ -22,7 +22,7 @@ export abstract class BaseScanner<O> implements Scannable<O> {
                 if (this.isScanned(...argArray)) {
                     return;
                 }
-                target.bind(thisArg)(...argArray);
+                target.call(thisArg, ...argArray);
             },
         });
     }
@@ -44,7 +44,7 @@ export abstract class SingleReferredScanner<O> implements Scannable<O> {
                 if (this.isScanned()) {
                     throw new Error(`scanned singleton object by multiple times. (target = ${argArray[0]?.constructor.name})`);
                 }
-                target.bind(thisArg)(...argArray);
+                target.call(thisArg, ...argArray);
                 this._isScanned = true;
             },
         });
